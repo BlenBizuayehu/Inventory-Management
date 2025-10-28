@@ -7,7 +7,7 @@ const {
   generateTransferReport,
   generateProductMovementReport,
   getReportTypes
-} = require('../controllers/reportController');
+} = require('../controllers/ReportController');
 const { protect } = require('../middleware/auth');
 
 // Protect all report routes
