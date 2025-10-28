@@ -10,7 +10,7 @@ const {
   getRecentActivities,
   getAccessibleShops
   // ... any other functions you export and use
-} = require('../controllers/inventoryController');
+} = require('../controllers/InventoryController');
 const { protect } = require('../middleware/auth');
 const { shopAccess, canAccessShop } = require('../middleware/shopAccess');
 
