@@ -10,7 +10,7 @@ const {
 } = require('../controllers/ReportController');
 const { protect } = require('../middleware/auth');
 
-// Protect all report routes
+
 router.use(protect);
 
 // Report endpoints

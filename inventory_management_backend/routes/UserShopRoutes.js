@@ -12,7 +12,6 @@ const router = express.Router();
 
 router.use(protect);
 
-// Admin only routes
 router.use(authorize('admin', 'owner'));
 
 // Assign user to shop
