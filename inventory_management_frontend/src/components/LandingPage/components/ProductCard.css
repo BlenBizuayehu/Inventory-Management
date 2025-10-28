@@ -1,0 +1,90 @@
+.product-card {
+  width: 100%;
+  max-width: 320px;
+  margin: 1.5rem;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  background-color: #fff;
+  cursor: pointer;
+  height: 400px;
+  position: relative;
+}
+
+.product-image {
+  height: 80%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.product-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+
+
+.product-overlay p {
+  font-size: 1rem;
+}
+
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+
+
+.product-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent 40%);
+  color: #fff;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 30%;
+  transition: all 0.3s ease;
+}
+
+.product-card:hover .product-overlay {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent 60%);
+  height: 100%;
+  padding: 2rem 1.5rem;
+}
+
+.product-overlay h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.product-description {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.3s ease 0.1s;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.product-card:hover .product-description {
+  opacity: 0.9;
+  max-height: 100px;
+  margin-top: 0.75rem;
+}

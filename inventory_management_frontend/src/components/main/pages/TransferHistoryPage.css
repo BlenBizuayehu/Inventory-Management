@@ -1,0 +1,77 @@
+/* Add to TransferRecords.css */
+.history-button {
+  background-color: #5c6bc0;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s;
+}
+
+.history-button:hover {
+  background-color: #3949ab;
+}
+
+.current-transfer {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.current-transfer h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.transfer-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.edit-history-list {
+  margin-top: 20px;
+}
+
+.history-entry {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+}
+
+.history-header {
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.history-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-user, .history-date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.history-details h4 {
+  margin-top: 0;
+  color: #333;
+}
+
+.no-history {
+  color: #666;
+  font-style: italic;
+  padding: 20px;
+  text-align: center;
+}

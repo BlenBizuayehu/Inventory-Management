@@ -1,0 +1,166 @@
+/* General Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Global font */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Main header container */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  height: 80px;
+  padding: 10px 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Right section: logo (35%) */
+.right-header {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+
+.logo-container {
+    display:flex;
+    align-items: center;
+    gap:20px;
+    color: #E60028;
+    font-weight: 600;
+    font-size: 20px;
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Logo image */
+.logo-container img {
+  height: 80px;
+  width: auto;
+}
+
+
+
+/* Left section: links (65%) */
+.left-header {
+  flex:0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Links styling */
+.links-container {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+/* Navigation links */
+.links-container a {
+  text-decoration: none;
+  color: #E60028; /* TotalEnergies red */
+  font-weight: 600;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.links-container a:hover {
+  color: #FF9900; /* TotalEnergies orange */
+}
+
+/* Login button */
+.btn-login {
+  padding: 8px 20px;
+  background-color: #E60028;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-login:hover {
+  background-color: #FF9900;
+}
+
+.btn-logout {
+  margin-top: 10px;
+  width: 100%;
+  padding: 8px;
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-logout:hover {
+  background-color: #FF9900;
+}
+
+
+/* Profile dropdown */
+.profile-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  min-width: 180px;
+  z-index: 101;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #f5f5f5;
+}
+
+.dropdown-icon {
+  margin-right: 0.75rem;
+  color: #666;
+}
+
+/* Sidebar positioning (add to your Sidebar.css) */
+.sidebar.right {
+  right: -300px;
+  left: auto;
+}
+
+.sidebar.right.open {
+  right: 0;
+}
+
+
+
+
+
+

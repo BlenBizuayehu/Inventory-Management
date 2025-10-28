@@ -1,0 +1,302 @@
+/* Invoices Page Specific Styles */
+.invoices-page {
+  padding: 2rem;
+}
+
+.search-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.search-bar {
+  flex: 1;
+  min-width: 300px;
+  position: relative;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7f8c8d;
+}
+
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.date-filter input{
+  padding:10px;
+  font-size: 15px;
+  padding: 0.5rem 1rem 0.7rem 2rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  transform: translateY(-25%);
+  color: #7f8c8d;
+
+}
+
+.filter-icon {
+  color: #7f8c8d;
+  transform: translateY(-25%);
+
+}
+
+.clear-filter {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.new-invoice-btn{
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invoice-list {
+  margin-top: 2rem;
+}
+
+.invoice-month-group {
+  margin-bottom: 2rem;
+}
+
+.invoice-actions{
+  display:flex;
+}
+
+.month-header {
+  color: #2c3e50;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ecf0f1;
+  margin-bottom: 1rem;
+}
+
+.invoice-card {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.invoice-summary {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.invoice-summary:hover {
+  background: #f5f5f5;
+}
+
+.invoice-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.invoice-number {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.supplier-name {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.invoice-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.invoice-date {
+  color: #7f8c8d;
+}
+
+.invoice-status {
+  color: #3498db;
+  font-weight: 500;
+}
+
+.invoice-status.open {
+  color: #e74c3c;
+}
+
+.invoice-details {
+  padding: 1rem;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+.details-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.detail-value {
+  font-weight: 500;
+}
+
+.items-header {
+  margin: 1rem 0;
+  color: #2c3e50;
+}
+
+.items-table {
+  width: 100%;
+  display: table;
+}
+
+.table-header, .table-row {
+  display: table-row;
+}
+
+.table-cell {
+  display: table-cell;
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.table-header .table-cell {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.invoice-totals{
+  display:block;
+}
+
+.invoice-total {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.total-label {
+  font-weight: bold;
+  margin-right: 1rem;
+}
+
+.total-amount {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #27ae60;
+  
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #7f8c8d;
+}
+
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Add these styles to your existing CSS */
+
+.invoice-total-amount {
+  font-weight: bold;
+  margin-right: 20px;
+}
+
+.invoice-totals {
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.total-row.grand-total {
+  font-weight: bold;
+  font-size: 1.1em;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.items-table .table-cell:nth-child(4),
+.items-table .table-cell:nth-child(5) {
+  text-align: right;
+}
+
+.table-header .table-cell:nth-child(4),
+.table-header .table-cell:nth-child(5) {
+  text-align: right;
+}
+
+.batch-placement-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.batch-placement-btn:hover {
+  background: #45a049;
+}

@@ -1,0 +1,484 @@
+/* Products Page Specific Styles */
+.image-preview, .product-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.description-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cancel-button {
+  background-color: #95a5a6;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.cancel-button:hover {
+  background-color: #7f8c8d;
+}
+
+.error-message {
+  background-color: #fdecea;
+  color: #e74c3c;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+/* Add these styles to your existing DashboardPage.css */
+
+/* Categories section */
+.categories-section {
+  margin: 2rem 0;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.toggle-categories-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #4a6fa5;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.toggle-categories-btn:hover {
+  background: #3a5a8a;
+}
+
+/* Products list section */
+.products-list-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.products-list-section h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+}
+
+/* Category form */
+.category-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.category-input-group input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Category edit input */
+.category-edit-input {
+  padding: 0.3rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* Table improvements */
+.products-table, .categories-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.products-table th, .categories-table th {
+  background: #4a6fa5;
+  color: white;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.products-table td, .categories-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.products-table tr:hover, .categories-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Image styling */
+.product-image {
+  max-width: 80px;
+  max-height: 80px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+/* Action buttons */
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.save-button, .cancel-button {
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+.save-button {
+  background: #28a745;
+  color: white;
+}
+
+
+.categories-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9fb;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-categories-btn {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.toggle-categories-btn:hover {
+  background-color: #357ac8;
+}
+
+.category-form {
+  margin-bottom: 2rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.category-input-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.category-input-group input[type="text"] {
+  padding: 0.6rem 1rem;
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.submit-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.submit-button:disabled {
+  background-color: #9dd8ac;
+  cursor: not-allowed;
+}
+
+.table-container h2 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.categories-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.categories-table th,
+.categories-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.categories-table th {
+  background-color: #f1f3f5;
+  font-weight: 600;
+}
+
+.categories-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.edit-btn,
+.delete-btn,
+.save-button,
+.cancel-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.edit-btn:hover {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.delete-btn:hover {
+  background-color: #fdecea;
+  color: #d32f2f;
+}
+
+.save-button {
+  background-color: #007bff;
+  color: white;
+  margin-right: 0.5rem;
+}
+
+.save-button:hover {
+  background-color: #0056b3;
+}
+
+.cancel-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.category-edit-input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+}
+
+/* Add to your ProductsPage.css */
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-group select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  outline: none;
+}
+
+/* Adjust table column widths */
+.products-table th:nth-child(4),
+.products-table td:nth-child(4) {
+  width: 100px;
+}
+
+/* Add to your ProductsPage.css */
+.form-group input[type="number"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+/* Style for disabled piecesPerPack input */
+.form-group input[disabled] {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+
+
+
+
+
+
+/* Products Grid Styles */
+.products-grid-section {
+  margin-top: 2rem;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  background: white;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.product-image {
+  height: 150px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder {
+  font-size: 3rem;
+  color: #ccc;
+}
+
+.product-info {
+  padding: 1rem;
+}
+
+.product-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.product-info .category {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+}
+
+.product-info .description {
+  font-size: 0.9rem;
+  color: #555;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.5rem;
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+.product-actions button {
+  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.3rem;
+}
+
+.product-actions .edit-btn {
+  color: #3498db;
+}
+
+.product-actions .delete-btn {
+  color: #e74c3c;
+}
+
+.page-footer {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.view-all-button {
+  display: inline-block;
+  padding: 0.7rem 1.5rem;
+  background: #3498db;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.view-all-button:hover {
+  background: #2980b9;
+}
+
+.no-products {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  grid-column: 1 / -1;
+}

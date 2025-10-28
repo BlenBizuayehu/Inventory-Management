@@ -1,0 +1,53 @@
+.contact-map-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  position: absolute;
+  width:47%;
+}
+
+.half-section {
+  flex: 1;
+  padding: 20px;
+}
+
+.visit {
+  background: #fff;
+  border-radius: 10px 0 0 10px;
+  margin-right: -30px;
+
+}
+
+
+.leaflet-map {
+  height: 295px;
+  width: 100%;
+  border-radius: 8px;
+  bottom:-10px;
+}
+
+.map-header {
+  position: absolute;
+  top: -70px; /* Move half outside the section */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 100px;
+  background-color: white;
+  text-align: center;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  z-index: 20;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+.icon-container.location {
+  font-size: 2rem;
+  color: #E60028;
+}
+

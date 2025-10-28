@@ -1,0 +1,151 @@
+/* Main content */
+.main-content {
+  padding: 60px 20px;
+  background: white;
+  overflow: hidden;
+}
+
+.content-section {
+  max-width: 1200px;
+  margin: 0 auto 60px;
+  padding: 40px;
+  text-align: center;
+}
+
+.content-section h2 {
+  color: #E60028;
+  margin-bottom: 20px;
+  font-size: 2.2rem;
+}
+
+.content-section p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+.contact-section {
+  background: #f8f8f8;
+  padding: 60px 40px;
+  border-radius: 8px;
+}
+
+/* Footer parallax */
+.footer-parallax {
+  height: 50vh;
+  background-image: url('/bkg3.jpg');
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
+  position: relative;
+}
+
+.parallax-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
+  z-index: 0; /* Behind slider */
+}
+
+.footer-parallax::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* Semi-transparent dark overlay */
+  z-index: 1;
+}
+
+/* Optional text inside overlay */
+.footer-parallax::after {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  z-index: 2;
+}
+
+/* Quick Links - new section */
+.quick-links {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 20px;
+  z-index: 3;
+  position: relative;
+}
+
+/* Create 3 columns for quick links */
+.quick-links ul {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 equal columns */
+  gap: 30px; /* Add spacing between columns */
+  list-style: none;
+  padding-top:50px;
+  margin: 0 auto;
+}
+
+/* Styling for each link item */
+.quick-links li {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.quick-links a {
+  color: #fff;
+
+  text-decoration: none;
+  transition: color 0.3s;
+  margin-left: 10px;
+}
+
+.quick-links h3{
+   color: #fff;
+  font-weight: bold;
+  font-size: 25px;
+}
+
+/* Arrow before the links */
+.quick-links li::before {
+  content: "→"; /* Arrow symbol */
+  color: #f39c12; /* Orange color for arrows */
+  font-size: 1.2rem;
+}
+
+/* Hover effect for links */
+.quick-links a:hover {
+  color: #f39c12; /* Change to your desired hover color */
+}
+
+/* Copyright Section - new styles */
+.copyright {
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 20px 0;
+  font-size: 1rem;
+}
+
+.copyright p {
+  margin: 0;
+}
+
+.copyright a {
+  color: #f39c12; /* Color for links */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.copyright a:hover {
+  text-decoration: underline;
+}
