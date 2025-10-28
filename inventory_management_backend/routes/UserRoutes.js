@@ -9,11 +9,24 @@ const {
   deleteUser,
   getCurrentUser,
   changePassword,
-  uploadProfileImage
+  uploadProfileImage,
+  updateProfile,
+  getMe
 } = require('../controllers/UserController');
+const multer = require('multer');
 const { protect, restrictTo } = require('../middleware/auth');
 const {  checkPermission } = require('../middleware/permissions');
-const upload = require('../middleware/upload');
+const { upload, handleUploadErrors } = require('../config/multer');
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
 
 // Public routes
 router.post('/login', loginUser);
@@ -21,11 +34,19 @@ router.post('/login', loginUser);
 // Protected routes
 router.use(protect);
 
+router.route('/me').get(getMe);
+
 // Current user routes
 router.get('/me', getCurrentUser);
-router.put('/change-password', changePassword);
-router.post('/upload-image', upload.single('image'), uploadProfileImage);
-
+router.put('/me', updateProfile);
+router.post('/me/upload-image', upload.single('image'), uploadProfileImage); 
+router.put('/me/change-password', changePassword); 
+router.post(
+  '/upload-image',
+  upload.single('image'), // 'image' should match the field name in your form
+  handleUploadErrors,
+  uploadProfileImage
+);
 // Admin/Owner routes
 router.use(checkPermission('userManagement.view'));
 // router.use(restrictTo('owner', 'admin'));
@@ -37,7 +58,7 @@ router.post('/register',
 );
 router.get('/', getUsers);
 router.get('/:id', getUserById);
-router.put('/:id', 
+router.put('/:id',
   checkPermission('userManagement.editOthers'),
   upload.none(), // Add this if you're using multer
   updateUser

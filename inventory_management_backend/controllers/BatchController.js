@@ -1,9 +1,12 @@
 const Batch = require('../models/Batch');
-const InvoiceItem = require('../models/InvoiceItem');
-const InventoryAllocation = require('../models/InventoryAllocation');
+const invoiceItem = require('../models/InvoiceItem');
+const BatchAssignment = require('../models/BatchAssignment.js');
 const InventoryStore = require('../models/InventoryStore');
 const mongoose = require('mongoose');
 const Invoice = require('../models/Invoice');
+const Placement=require('../models/Placement.js');
+const InventoryActivity=require('../models/InventoryActivity.js');
+const asyncHandler = require('../middleware/async');
 
 // Fetch batches for product (internal use)
 exports.fetchBatchesForProduct = async (productId, location) => {
@@ -88,216 +91,177 @@ exports.getBatchLocations = async (req, res) => {
   }
 };
 
-// Create batch placements from invoice
-exports.createBatchPlacements = async (req, res) => {
+// controllers/BatchController.js
+
+// controllers/BatchController.js
+
+exports.createBatchPlacements = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  
+
   try {
     const { invoiceId, placements } = req.body;
 
-    // Validate request
-    if (!invoiceId) throw new Error('Missing invoiceId');
-    if (!placements?.length) throw new Error('Placements array required');
+    // --- Robust Validation ---
+    if (!invoiceId) throw new Error('Invoice ID is required.');
+    if (!placements || !Array.isArray(placements)) throw new Error('Placements array is required.');
 
     const invoice = await Invoice.findById(invoiceId).session(session);
-    if (!invoice) throw new Error(`Invoice ${invoiceId} not found`);
+    if (!invoice) throw new Error(`Invoice with ID ${invoiceId} not found.`);
 
-    const results = await Promise.all(
-      placements.map(async (placement) => {
-        // Validate placement
-        if (!placement.invoiceItem || !placement.store || !placement.batchNumber) {
-          throw new Error('Missing required fields in placement');
-        }
-        
+    // Filter out any placements where the user did not enter a quantity
+    const validPlacements = placements.filter(p => {
+        const totalPieces = (p.packs || 0) * (p.packSize || 1) + (p.pieces || 0);
+        return totalPieces > 0;
+    });
+
+    if (validPlacements.length === 0) {
+        throw new Error('No valid quantities were submitted for placement.');
+    }
+
+    const results = [];
+
+    // Loop through only the valid placements
+    for (const placement of validPlacements) {
         const totalPieces = (placement.packs * placement.packSize) + placement.pieces;
-        if (totalPieces <= 0) throw new Error('Total quantity must be positive');
-
-        const invoiceItem = await InvoiceItem.findOne({
-          _id: placement.invoiceItem,
-          invoice: invoiceId
-        }).session(session);
         
-        if (!invoiceItem) throw new Error(`Invoice item ${placement.invoiceItem} not found`);
-
-        // 1. Find or create batch
-        let batch = await Batch.findOne({
-          batchNumber: placement.batchNumber
-        }).session(session);
-
-        if (!batch) {
-          batch = new Batch({
+        // --- THIS IS THE FIX ---
+        // We construct the full object here to pass to Placement.create,
+        // ensuring all required fields are present.
+        const placementData = {
+            invoice: invoiceId,
             invoiceItem: placement.invoiceItem,
             product: placement.product,
-            batchNumber: placement.batchNumber,
-            packSize: placement.packSize,
-            originalQuantity: totalPieces,
-            remainingQuantity: totalPieces,
-            purchasePrice: invoiceItem.buyPrice
-          });
-          await batch.save({ session });
-        }
-
-        // 2. Check existing allocation
-        let allocation = await InventoryAllocation.findOne({
-          batch: batch._id,
-          store: placement.store
-        }).session(session);
-
-        if (allocation) {
-          // Update existing allocation
-          allocation.quantity += totalPieces;
-          allocation.packs += placement.packs;
-          allocation.pieces += placement.pieces;
-          await allocation.save({ session });
-        } else {
-          // Create new allocation
-          allocation = await InventoryAllocation.create([{
-            batch: batch._id,
             store: placement.store,
-            quantity: totalPieces,
+            batchNumber: placement.batchNumber,
             packs: placement.packs,
             pieces: placement.pieces,
-            status: 'placed',
-            reference: invoiceId
-          }], { session });
-        }
+            packSize: placement.packSize,
+            quantity: totalPieces
+        };
+        
+        // 1. Create the placement record
+        const [newPlacement] = await Placement.create([placementData], { session });
+        results.push(newPlacement);
 
-        // 3. Update store inventory
+        // 2. Update the inventory store
         await InventoryStore.findOneAndUpdate(
           { product: placement.product, store: placement.store },
           {
-            $inc: { totalQuantity: totalPieces },
-            $push: { 
+            $push: {
               batchBreakdown: {
-                batch: batch._id,
-                quantity: totalPieces,
+                batchNumber: placement.batchNumber,
                 packs: placement.packs,
-                pieces: placement.pieces
+                pieces: placement.pieces,
+                packSize: placement.packSize
               }
-            }
+            },
+            $inc: { totalQuantity: totalPieces },
+            $set: { lastUpdated: new Date() }
           },
-          { upsert: true, session }
+          { upsert: true, new: true, session }
         );
 
-        return {
-          batch: batch.batchNumber,
-          product: placement.product,
+        // 3. Record the inventory activity
+        await InventoryActivity.create([{
           store: placement.store,
+          type: 'placement',
           quantity: totalPieces,
           packs: placement.packs,
-          pieces: placement.pieces
-        };
-      })
-    );
+          pieces: placement.pieces,
+          product: placement.product,
+          user: req.user._id,
+          notes: `Stock placed from invoice #${invoice.invoiceNumber}`,
+          batchNumber: placement.batchNumber
+        }], { session });
+    }
 
     await session.commitTransaction();
-    res.status(201).json({ 
-      success: true,
-      data: results
-    });
+    res.status(201).json({ success: true, data: results });
+
   } catch (error) {
     await session.abortTransaction();
     console.error('Batch placement error:', error);
-    res.status(400).json({
+    // Send a more specific error message back to the frontend
+    res.status(400).json({ 
       success: false,
       error: error.message
     });
   } finally {
     session.endSession();
   }
-};
-
-// Transfer inventory between locations
-exports.transferInventory = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+});
+// In your backend controller (e.g., batchesController.js)
+// In batchesController.js
+exports.getPlacementsByInvoice = asyncHandler(async (req, res) => {
   try {
-    const { fromStore, toStore, transfers } = req.body;
-
-    if (!fromStore || !toStore || !transfers?.length) {
-      throw new Error('Missing required fields');
+    const { invoiceId } = req.query;
+    
+    if (!invoiceId) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invoice ID is required' 
+      });
     }
 
-    const transferResults = await Promise.all(
-      transfers.map(async (transfer) => {
-        // 1. Verify source allocation
-        const sourceAllocation = await InventoryAllocation.findOne({
-          batch: transfer.batchId,
-          store: fromStore,
-          quantity: { $gte: transfer.quantity }
-        }).session(session);
+    const placements = await Placement.find({ invoice: invoiceId })
+      .populate('store', 'name')
+      .populate('product', 'name');
 
-        if (!sourceAllocation) {
-          throw new Error(`Insufficient quantity in batch ${transfer.batchId} at store ${fromStore}`);
-        }
-
-        // 2. Update source allocation
-        await InventoryAllocation.findByIdAndUpdate(
-          sourceAllocation._id,
-          { $inc: { quantity: -transfer.quantity } },
-          { session }
-        );
-
-        // 3. Create destination allocation
-        await InventoryAllocation.create([{
-          batch: transfer.batchId,
-          store: toStore,
-          quantity: transfer.quantity,
-          status: 'transferred',
-          reference: transfer.referenceId || 'manual-transfer'
-        }], { session });
-
-        // 4. Update store inventories
-        await Promise.all([
-          // Reduce source
-          InventoryStore.findOneAndUpdate(
-            { product: transfer.productId, store: fromStore },
-            {
-              $inc: { totalQuantity: -transfer.quantity },
-              $pull: { batchBreakdown: { batch: transfer.batchId } }
-            },
-            { session }
-          ),
-          // Increase destination
-          InventoryStore.findOneAndUpdate(
-            { product: transfer.productId, store: toStore },
-            {
-              $inc: { totalQuantity: transfer.quantity },
-              $push: { 
-                batchBreakdown: {
-                  batch: transfer.batchId,
-                  quantity: transfer.quantity
-                }
-              }
-            },
-            { upsert: true, session }
-          )
-        ]);
-
-        return {
-          batch: transfer.batchId,
-          fromStore,
-          toStore,
-          quantity: transfer.quantity,
-          status: 'completed'
-        };
-      })
-    );
-
-    await session.commitTransaction();
-    res.status(200).json({ 
+    res.status(200).json({
       success: true,
-      data: transferResults 
+      data: placements
     });
   } catch (error) {
-    await session.abortTransaction();
-    res.status(400).json({ 
+    console.error('Error fetching placements:', error);
+    res.status(500).json({ 
       success: false,
-      error: error.message 
+      error: 'Failed to fetch placements' 
     });
+  }
+});
+
+
+
+
+
+
+
+const migratePlacementsToInventory = async () => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    const placements = await Placement.find().session(session);
+
+    for (const placement of placements) {
+      await InventoryStore.findOneAndUpdate(
+        { product: placement.product, store: placement.store },
+        {
+          $push: {
+            batchBreakdown: {
+              batchNumber: placement.batchNumber,
+              packs: placement.packs,
+              pieces: placement.pieces,
+              packSize: placement.packSize
+            }
+          },
+          $set: { lastUpdated: new Date() }
+        },
+        { upsert: true, session }
+      );
+    }
+
+    await session.commitTransaction();
+    console.log('Successfully migrated placements to inventory');
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Migration failed:', error);
+    throw error;
   } finally {
     session.endSession();
   }
 };
+
+// Run with: 
+// migratePlacementsToInventory().then(() => process.exit(0)).catch(() => process.exit(1));

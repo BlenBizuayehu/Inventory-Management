@@ -4,43 +4,97 @@ const inventoryStoreSchema = new mongoose.Schema({
   product: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Product',
-    required: true 
+    required: [true, 'Product ID is required'],
+    validate: {
+      validator: mongoose.Types.ObjectId.isValid,
+      message: props => `${props.value} is not a valid product ID!`
+    }
   },
   store: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Store',
     required: true
   },
-  totalQuantity: {
+  quantity: {  // Renamed from totalPieces for consistency
     type: Number,
     default: 0,
     min: 0
   },
   batchBreakdown: [{
     batch: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       ref: 'Batch'
     },
-    quantity: {
-      type: Number,
-      min: 0
+    batchNumber: {  // Added this crucial field
+      type: String,
+      required: true
     },
     packs: {
       type: Number,
-      min: 0
+      min: 0,
+      default: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: '{VALUE} is not an integer value'
+      }
     },
     pieces: {
       type: Number,
-      min: 0
+      min: 0,
+      default: 0,
+      validate: [
+        {
+          validator: Number.isInteger,
+          message: '{VALUE} is not an integer value'
+        },
+        {
+          validator: function(v) {
+            return v < this.packSize;
+          },
+          message: 'Pieces must be less than pack size'
+        }
+      ]
+    },
+    packSize: {
+      type: Number,
+      min: 1,
+      default: 1,
+      validate: {
+        validator: Number.isInteger,
+        message: '{VALUE} is not an integer value'
+      }
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
     }
   }],
-  lastUpdated: { 
-    type: Date, 
-    default: Date.now 
+  lastUpdated: {
+    type: Date,
+    default: Date.now
   }
-}, { timestamps: true });
+}, {
+  timestamps: true,
+  index: { product: 1, store: 1 },
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
 
-// Compound index to ensure one inventory record per product-store combination
-inventoryStoreSchema.index({ product: 1, store: 1 }, { unique: true });
+// Auto-calculate quantity when saving
+inventoryStoreSchema.pre('save', function(next) {
+  this.quantity = this.batchBreakdown.reduce((total, batch) => {
+    return total + (batch.packs * batch.packSize) + batch.pieces;
+  }, 0);
+  this.lastUpdated = new Date();
+  next();
+});
+
+// Add virtual for total pieces by batch
+inventoryStoreSchema.virtual('batchBreakdown.totalPieces').get(function() {
+  return this.batchBreakdown.map(batch => ({
+    ...batch.toObject(),
+    totalPieces: (batch.packs * batch.packSize) + batch.pieces
+  }));
+});
 
 module.exports = mongoose.model('InventoryStore', inventoryStoreSchema);

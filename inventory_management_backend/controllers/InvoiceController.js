@@ -53,55 +53,62 @@ exports.createInvoice = async (req, res) => {
     }
 
     // Get system settings (VAT rate)
-    const settings = await SystemSettings.findOne();
-    const vatRate = settings?.vatRate || 0.15;
+     const settings = await SystemSettings.getSettings();
+    const vatRate = settings.vatRate; // Use the VAT rate from settings
+    const currency = settings.currency; 
+
 
     // Create the invoice
     const invoice = new Invoice({
       supplier: req.body.supplier,
       supplierName: supplier.name,
       invoiceNumber: req.body.invoiceNumber,
-      invoiceDate: new Date(req.body.invoiceDate)
+      invoiceDate: new Date(req.body.invoiceDate),
+      currency: currency
     });
 
     const savedInvoice = await invoice.save();
 
     // Create invoice items with enhanced validation
-    const invoiceItems = await Promise.all(
-      req.body.items.map(async (item) => {
-        if (!item.product || !item.buyPrice || !item.quantityBought) {
-          throw new Error('Invalid item data');
-        }
-        
-        const invoiceItem = new InvoiceItem({
-           invoice: savedInvoice._id,
-          product: item.product,
-          buyPrice: parseFloat(item.buyPrice),
-          quantityBought: parseInt(item.quantityBought), // Store as entered
-          unitMode: item.unitMode || 'piece',
-          piecesPerPack: item.piecesPerPack || 1,
-          quantityRemaining: parseInt(item.quantityBought) ,
-          batchNumber: savedInvoice.invoiceNumber,
-          unitMode: item.unitMode || 'piece',
-          piecesPerPack: item.piecesPerPack || 1
-        });
-        
-const savedItem = await invoiceItem.save();
-         await Batch.create({
-          invoiceItem: savedItem._id,
-          batchNumber: savedItem.batchNumber,
-          location: req.body.location || 'main-store',
-          originalQuantity: item.quantityBought,
-          availablePacks: Math.floor(item.quantityBought / (item.piecesPerPack || 1)),
-          availablePieces: item.quantityBought % (item.piecesPerPack || 1),
-          packSize: item.piecesPerPack || 1,
-          purchasePrice: item.buyPrice,
-          currentPrice: item.buyPrice * 1.2 // Example markup
-        });     
-        
-         return savedItem;
-})
-    );
+    // Create invoice items with enhanced validation
+const invoiceItems = await Promise.all(
+  req.body.items.map(async (item) => {
+    if (!item.product || !item.buyPrice || !item.quantityBought) {
+      throw new Error('Invalid item data');
+    }
+    
+    const invoiceItem = new InvoiceItem({
+      invoice: savedInvoice._id,
+      product: item.product,
+      buyPrice: parseFloat(item.buyPrice),
+      quantityBought: parseInt(item.quantityBought),
+      unitMode: item.unitMode || 'piece',
+      piecesPerPack: item.piecesPerPack || 1,
+      quantityRemaining: parseInt(item.quantityBought),
+      batchNumber: `${savedInvoice.invoiceNumber}-${item.product}`
+    });
+    
+    const savedItem = await invoiceItem.save();
+
+    // Create batch with all required fields
+    await Batch.create({
+      invoiceItem: savedItem._id,
+      product: item.product, // Required field
+      batchNumber: savedItem.batchNumber,
+      originalQuantity: item.quantityBought,
+      remainingQuantity: item.quantityBought, // Required field
+      packSize: item.piecesPerPack || 1,
+      purchasePrice: item.buyPrice,
+      currentPrice: item.buyPrice * 1.2,
+      // Optional fields
+      location: req.body.location || 'main-store',
+      availablePacks: Math.floor(item.quantityBought / (item.piecesPerPack || 1)),
+      availablePieces: item.quantityBought % (item.piecesPerPack || 1)
+    });
+    
+    return savedItem;
+  })
+);
 
     
 
@@ -122,7 +129,7 @@ const savedItem = await invoiceItem.save();
       data: {
         invoice: savedInvoice,
         items: invoiceItems,
-         nextStep: `/batch-placement/${savedInvoice._id}`
+        nextStep: `/batch-placement/${savedInvoice._id}`
       }
     });
   } catch (error) {

@@ -2,16 +2,21 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const dotenv = require('dotenv');
+const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
 dotenv.config();
 
 // Helper function to generate JWT
-generateToken = (id, role) => {
+const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 };
 
-// controllers/userController.js
-const cloudinary = require('cloudinary').v2;
-const fs = require('fs');
+const selectUserFields = (user) => {
+    if (!user) return null;
+    const { passwordHash, ...userWithoutPassword } = user.toObject();
+    return userWithoutPassword;
+};
+
 
 // Configure Cloudinary (add to your env variables)
 cloudinary.config({
@@ -23,99 +28,46 @@ cloudinary.config({
 // Register User with permissions
 exports.registerUser = async (req, res) => {
   try {
-    // Verify requester is owner
     if (req.user.role !== 'owner') {
-      return res.status(403).json({ 
-        success: false,
-        message: 'Only owner can register users' 
-      });
+      return res.status(403).json({ success: false, error: 'Only the owner can register new users.' });
     }
 
-    // Log incoming request body for debugging
-    console.log('Request body:', req.body);
-    
-    // Extract data from form
-    const { username, password, role, email, showInTeam } = req.body;
-    
-    // Validate required fields
-    if (!username || !password || !role || !email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Missing required fields'
-      });
+    const { username, password, role, email, showInTeam, permissions } = req.body;
+    if (!username || !password || !email) {
+      return res.status(400).json({ success: false, error: 'Username, password, and email are required.' });
     }
 
-    // Parse permissions from stringified JSON or use empty object
-    let permissions = {};
-    try {
-      permissions = req.body.permissions ? JSON.parse(req.body.permissions) : {};
-    } catch (err) {
-      console.error('Error parsing permissions:', err);
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid permissions structure',
-        details: err.message
-      });
-    }
-
-    // Check if user already exists
-    const userExists = await User.findOne({ username });
+    const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'User already exists'
-      });
+      return res.status(400).json({ success: false, error: 'A user with this email already exists.' });
     }
 
-    if (!['admin', 'staff'].includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid role specified'
-      });
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    let parsedPermissions = {};
+    if (typeof permissions === 'string') {
+        try { parsedPermissions = JSON.parse(permissions); }
+        catch (e) { return res.status(400).json({ success: false, error: 'Invalid permissions format.'}) }
+    } else {
+        parsedPermissions = permissions;
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user object with default permissions if none provided
-    const userData = {
+    const user = await User.create({
       username,
       email,
-      passwordHash: hashedPassword,
-      role,
+      passwordHash,
+      role: role || 'staff',
       showInTeam: showInTeam === 'true',
-      permissions: permissions || getDefaultPermissions(role)
-    };
-
-    // Handle file upload if exists
-    if (req.file) {
-      userData.profileImage = req.file.path;
-    }
-
-    // Create and save user
-    const user = await User.create(userData);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        showInTeam: user.showInTeam,
-        permissions: user.permissions,
-        profileImage: user.profileImage
-      }
+      permissions: parsedPermissions||getDefaultPermissions,
+      // Handle image upload with Cloudinary or similar in a separate step if needed
     });
+
+    res.status(201).json({ success: true, data: selectUserFields(user) });
   } catch (error) {
-    console.error('Error in registerUser:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
+    res.status(500).json({ success: false, error: 'Server error during registration.' });
   }
 };
+
 
 // Helper function for default permissions
 function getDefaultPermissions(role) {
@@ -133,80 +85,62 @@ function getDefaultPermissions(role) {
 
   return basePermissions;
 }
+
+
+
 // Upload profile image
 exports.uploadProfileImage = async (req, res) => {
   try {
-    if (!req.files || !req.files.image) {
-      return res.status(400).json({ message: 'No image uploaded' });
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'No image file uploaded' 
+      });
     }
 
-    const file = req.files.image;
-    const result = await cloudinary.uploader.upload(file.tempFilePath, {
-      folder: 'user-profiles',
-      width: 500,
-      height: 500,
-      crop: 'limit'
-    });
+    // Construct proper URL - adjust based on your setup
+    const imageUrl = `/uploads/${req.file.filename}`;
 
-    // Delete temp file
-    fs.unlinkSync(file.tempFilePath);
-
-    // Update user profile image
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { profileImage: result.secure_url },
+      { profileImage: imageUrl },
       { new: true }
-    );
+    ).select('-passwordHash');
 
     res.status(200).json({
       success: true,
-      data: user
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// Login User - Fixed version
-exports.loginUser = async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    // Check if user exists
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Check if password matches
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    // Update last login
-    await this.updateLastLogin(user._id);
-
-    // Generate JWT token
-    const token = generateToken(user._id, user.role);
-
-    return res.status(200).json({ 
-      message: 'Login successful', 
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        role: user.role,
-        email: user.email,
-
+      data: {
+        profileImage: imageUrl, // Make sure this is the correct path
+        user
       }
     });
+
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error' });
+    console.error('Upload error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to upload profile image' 
+    });
   }
 };
+
+exports.loginUser = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    user.lastLogin = new Date();
+    await user.save();
+    const token = generateToken(user._id, user.role);
+    res.status(200).json({ success: true, token, data: selectUserFields(user) });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error during login.' });
+  }
+};
+
+
 // Update last login timestamp
 exports.updateLastLogin = async (userId) => {
   try {
@@ -218,243 +152,162 @@ exports.updateLastLogin = async (userId) => {
   }
 };
 
-exports.updateUser = async (req, res) => {
-  try {
-    // First check if body exists and is properly formatted
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: "Request body is missing or empty" 
-      });
-    }
 
-    // Get the raw body data
-    const { username, email, role, showInTeam, permissions } = req.body;
-    
-    // Validate required fields
-    if (!username) {
-      return res.status(400).json({ 
-        success: false,
-        message: "Username is required" 
-      });
-    }
-
-    const userId = req.params.id;
-    
-    // Verify permissions
-    const requestingUser = await User.findById(req.user.id);
-    
-    // Only owner can change roles or update other users
-    if (requestingUser.role !== 'owner' && userId !== req.user.id) {
-      return res.status(403).json({ 
-        success: false,
-        message: 'Not authorized to update this user' 
-      });
-    }
-    
-    // Find user to update
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'User not found' 
-      });
-    }
-    
-    // Update fields
-    user.username = username;
-    if (email) user.email = email;
-    
-    // Only owner can change roles
-    if (role && requestingUser.role === 'owner') {
-      user.role = role;
-    }
-    
-    if (typeof showInTeam !== 'undefined') {
-      user.showInTeam = showInTeam;
-    }
-    
-    // Only owner can update permissions
-    if (permissions && requestingUser.role === 'owner') {
-      user.permissions = permissions;
-    }
-    
-    await user.save();
-    
-     const responseData = {
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      showInTeam: user.showInTeam,
-      permissions: user.permissions,
-      // Include any other necessary fields
-      profileImage: user.profileImage,
-      createdAt: user.createdAt,
-      lastLogin: user.lastLogin
-    };
-
-       res.status(200).json({
-      success: true,
-      message: 'User updated successfully',
-      user: updatedUser // Return the complete user document
-    });
-  } catch (error) {
-    console.error('Error updating user:', error);
-    res.status(500).json({ 
-      success: false,
-      message: 'Server error',
-      error: error.message 
-    });
-  }
-};
-
-// Change password
 exports.changePassword = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.user.id; // Can only change own password
-    
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ success: false, error: 'All password fields are required.' });
     }
-    
-    // Verify current password
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, error: 'New passwords do not match.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+
+    // --- THIS IS THE FIX ---
+    // Compare the PLAIN TEXT currentPassword with the HASHED password in the database.
     const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Current password is incorrect' });
+      return res.status(401).json({ success: false, error: 'Your current password is incorrect.' });
     }
-    
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.passwordHash = hashedPassword;
+
+    // If it matches, now we can hash the NEW password and save it.
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
     await user.save();
-    
-    res.status(200).json({ message: 'Password changed successfully' });
+
+    res.status(200).json({ success: true, message: 'Password changed successfully.' });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Password change error:', error);
+    res.status(500).json({ success: false, error: 'Server error while changing password.' });
   }
 };
 
-// Get single user by ID
-// Get single user by ID
 exports.getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-passwordHash');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    try {
+        const user = await User.findById(req.params.id).select('-passwordHash');
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+        res.status(200).json({ success: true, data: user });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Server error' });
     }
-    
-    res.status(200).json(user);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
 };
 
-// Get all users
-// In your getUsers controller
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find().select('-passwordHash');
-    res.status(200).json({
-      success: true,
-      data: users // Ensure we're returning { success, data } format
-    });
+    res.status(200).json({ success: true, data: users });
   } catch (error) {
-    res.status(500).json({ 
-      success: false,
-      message: 'Server error' 
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch users.' });
   }
 };
+
+exports.getCurrentUser = async (req, res) => {
+  const user = await User.findById(req.user.id).select('-passwordHash');
+  if (!user) return res.status(404).json({ success: false, error: 'User not found.' });
+  res.status(200).json({ success: true, data: user });
+};
+
+
 
 // Get current user (requires auth)
-// In your backend controller
 exports.getCurrentUser = async (req, res) => {
-  try {
-    // User is already attached to req by protect middleware
-    const user = {
-      id: req.user._id,
-      username: req.user.username,
-      email: req.user.email,
-      role: req.user.role,
-      lastLogin: req.user.lastLogin
-    };
-    
-    res.status(200).json({
-      success: true,
-      data: user  // Make sure role is included here
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
+    // req.user is populated by the 'protect' middleware. We just need to select fields.
+    const user = await User.findById(req.user.id).select('-passwordHash');
+    if (!user) return res.status(404).json({ success: false, error: 'User not found.' });
+    res.status(200).json({ success: true, data: user });
 };
 
-// Update user (only owner or admin can update)
+/**
+ * @desc    Update any user's details (Admin/Owner only) or self
+ * @route   PUT /api/users/:id
+ */
 exports.updateUser = async (req, res) => {
   try {
-    const { username, email, role } = req.body;
-    const userId = req.params.id;
-    
-    // Verify permissions
-    const requestingUser = await User.findById(req.user.id);
-    
-    // Only owner can change roles or update other users
-    if (requestingUser.role !== 'owner' && userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to update this user' });
+    const userIdToUpdate = req.params.id;
+    const requestingUserRole = req.user.role;
+    const userToUpdate = await User.findById(userIdToUpdate);
+    if (!userToUpdate) return res.status(404).json({ success: false, error: 'User not found' });
+
+    if (requestingUserRole !== 'owner' && !req.user.permissions?.userManagement?.editOthers) {
+        return res.status(403).json({ success: false, error: 'You are not authorized to update this user.' });
     }
+    const { username, email, role, showInTeam, permissions } = req.body;
+    userToUpdate.username = username || userToUpdate.username;
+    userToUpdate.email = email || userToUpdate.email;
+    userToUpdate.showInTeam = typeof showInTeam !== 'undefined' ? showInTeam : userToUpdate.showInTeam;
     
-    // Only owner can change roles
-    if (role && requestingUser.role !== 'owner') {
-      return res.status(403).json({ message: 'Only owner can change roles' });
+    // Only owner can change roles and permissions
+    if (requestingUserRole === 'owner') {
+        userToUpdate.role = role || userToUpdate.role;
+        userToUpdate.permissions = permissions || userToUpdate.permissions;
     }
-    
-    // Find user to update
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    // Update fields
-    if (username) user.username = username;
-    if (email) user.email = email;
-    if (role && requestingUser.role === 'owner') user.role = role;
-    
-    await user.save();
-    
-    res.status(200).json({
-      message: 'User updated successfully',
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role
-      }
-    });
+    const updatedUser = await userToUpdate.save();
+    res.status(200).json({ success: true, data: selectUserFields(updatedUser) });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, error: 'Server error during update.' });
   }
 };
 
 // Delete user
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json({ message: 'User deleted' });
+    const userToDelete = await User.findById(req.params.id);
+    if (!userToDelete) return res.status(404).json({ success: false, error: 'User not found' });
+    if (userToDelete.role === 'owner') return res.status(400).json({ success: false, error: 'Cannot delete the owner account.' });
+    await userToDelete.deleteOne();
+    res.status(200).json({ success: true, data: {} });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ success: false, error: 'Server error during deletion.' });
   }
 };
 
 
+// controllers/userController.js
 
+// Update current user's profile (not for admin editing other users)
+exports.updateProfile = async (req, res) => {
+  try {
+    const { username, email, showInTeam } = req.body;
+    const userId = req.user.id; // Only update the logged-in user
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found' 
+      });
+    }
+
+    // Update allowed fields
+    user.username = username || user.username;
+    user.email = email || user.email;
+    user.showInTeam = typeof showInTeam !== 'undefined' ? showInTeam : user.showInTeam;
+
+    const updatedUser = await user.save();
+    res.status(200).json({ 
+      success: true, 
+      data: selectUserFields(updatedUser) 
+    });
+
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to update profile' 
+    });
+  }
+};
+
+exports.getMe = (async (req, res, next) => {
+
+  res.status(200).json({
+    success: true,
+    data: req.user 
+  });
+});

@@ -4,7 +4,11 @@ const InvoiceSchema = new mongoose.Schema({
   supplierName: { type: String, required: true },
   invoiceNumber: { type: String, required: true },
   invoiceDate: { type: Date, required: true },
-  
+   currency: {
+        type: String,
+        required: true,
+        default: 'ETB' // Set a sensible default
+    },
   // New calculated fields (optional but recommended)
   subtotal: { type: Number },
   vatAmount: { type: Number },

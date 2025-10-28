@@ -90,19 +90,18 @@ exports.getUserAssignments = async (req, res) => {
 };
 
 // Get all users assigned to a shop
+// Modify your controller responses to be consistent
 exports.getShopAssignments = async (req, res) => {
   try {
     const { shopId } = req.params;
-
     const assignments = await UserShop.find({ shop: shopId })
       .populate('user', 'name email role')
       .populate('shop', 'name location');
 
     res.status(200).json({
       success: true,
-      data: assignments
+      data: assignments // Consistent structure
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ 

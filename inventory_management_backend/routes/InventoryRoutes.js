@@ -1,15 +1,33 @@
 const express = require('express');
 const router = express.Router();
-const inventoryController = require('../controllers/inventoryController');
-const { protect, authorize } = require('../middleware/auth');
+const {
+  getStoreHistory, // Use this one
+  getShopHistory,  // And this one
+  getStoreInventory,
+  getShopInventory,
+  getMyShopsInventory,
+  getInventoryStats,
+  getRecentActivities,
+  getAccessibleShops
+  // ... any other functions you export and use
+} = require('../controllers/inventoryController');
+const { protect } = require('../middleware/auth');
+const { shopAccess, canAccessShop } = require('../middleware/shopAccess');
 
-// Get store inventory
-router.get('/store/:storeId', protect, inventoryController.getStoreInventory);
+router.use(protect);
+router.use(shopAccess);
+router.get('/accessible-shops', getAccessibleShops);
 
-// Get all inventory stats (for overview)
-router.get('/stats', protect, inventoryController.getInventoryStats);
+// Make sure your routes point to the new functions
+router.route('/store-history/:storeId').get(protect, getStoreHistory);
+router.route('/shop-history/:shopId').get(protect, getShopHistory);
 
-// Get recent activities
-router.get('/activities', protect, inventoryController.getRecentActivities);
+router.route('/store/:storeId').get(protect, getStoreInventory);
+router.get('/shop/:shopId', canAccessShop(), getShopInventory);
+
+router.route('/stats').get(protect, getInventoryStats);
+router.route('/activities').get(protect, getRecentActivities);
+//Get all accessible shops for current user
+router.get('/my-shops', getMyShopsInventory);
 
 module.exports = router;

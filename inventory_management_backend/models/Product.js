@@ -27,6 +27,11 @@ const ProductSchema = new mongoose.Schema({
     min: [1, 'Pieces per pack must be at least 1'],
     default: 1
   },
+    currentSellPrice: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
   imageUrl: {
     type: String,
     default: ''
@@ -40,4 +45,22 @@ const ProductSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
+// Add to your ProductSchema
+ProductSchema.statics.updateCurrentPrices = async function(priceUpdates, session = null) {
+  const ops = priceUpdates.map(({ productId, price }) => ({
+    updateOne: {
+      filter: { _id: productId },
+      update: { $set: { currentSellPrice: price } }
+    }
+  }));
+
+  const options = session ? { session } : {};
+  return this.bulkWrite(ops, options);
+};
+
+ProductSchema.methods.getPriceHistory = function() {
+  return mongoose.model('ProductPrice').find({ product: this._id })
+    .sort({ effectiveDate: -1 })
+    .populate('createdBy', 'name');
+};
 module.exports = mongoose.model('Product', ProductSchema);
