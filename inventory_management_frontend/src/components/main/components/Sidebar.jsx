@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, onClose, position = "right" }) {
       <button
   className="dropdown-item"
   onClick={() => {
-    navigate("/profile");
+    navigate("/owner/dashboard/profile");
     setIsProfileOpen(false);
     onClose(); // Optional: closes the sidebar
   }}
@@ -86,12 +86,13 @@ export default function Sidebar({ isOpen, onClose, position = "right" }) {
           
           <h3>More Options</h3>
           <div className="sidebar-links">
-            <button onClick={() => handleNavigation("/suppliers")}>Suppliers</button>
-            <button onClick={() => handleNavigation("/settings")}>Settings</button>
-            <button onClick={() => handleNavigation("/product-prices")}>Prices</button>
-            <button onClick={() => handleNavigation("/shops")}>Shops</button>
-            <button onClick={() => handleNavigation("/stores")}>Stores</button>
-            <button onClick={() => handleNavigation("/user-shop")}>Assign shop to user</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/suppliers")}>Suppliers</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/credits")}>Receivables</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/settings")}>Settings</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/product-prices")}>Prices</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/shops")}>Shops</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/stores")}>Stores</button>
+            <button onClick={() => handleNavigation("/owner/dashboard/user-shop")}>Assign shop to user</button>
 
           </div>
         </div>

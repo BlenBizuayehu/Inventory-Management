@@ -781,3 +781,32 @@
 .batch-select option {
   padding: 5px;
 }
+
+/* Add this to your TransferToShops.css */
+.alert {
+  padding: 12px 16px;
+  margin: 16px 0;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.alert-error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+}
+
+.alert-success {
+  background-color: #efe;
+  border: 1px solid #cfc;
+  color: #363;
+}
+
+.alert-warning {
+  background-color: #ffecb3;
+  border: 1px solid #ffd54f;
+  color: #7d6608;
+}

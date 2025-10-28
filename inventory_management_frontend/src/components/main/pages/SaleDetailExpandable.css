@@ -1,0 +1,38 @@
+.sale-detail-expandable {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-top: 1px solid #dee2e6;
+}
+.sale-detail-expandable h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.detail-section p {
+    margin: 0.4rem 0;
+    font-size: 0.9em;
+    color: #495057;
+}
+.detail-section p strong {
+    color: #212529;
+}
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.items-table th, .items-table td {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+}
+.items-table th {
+    background-color: #e9ecef;
+}

@@ -27,12 +27,11 @@ body {
 
 .stores-container {
   max-width: 900px;
-  margin: 20px auto;
+  margin: 120px auto 40px;
   padding: 0 15px 40px;
   background: var(--bg-white);
   border-radius: var(--border-radius);
   box-shadow: var(--box-shadow);
-    margin-top:120px;
 }
 
 .tabs {

@@ -1,0 +1,199 @@
+/* src/components/inventory/ShopHistory/ShopHistory.css */
+
+.shop-history-container {
+  padding: 2rem;
+  max-width: 1200px;
+
+font-family: 'Inter', sans-serif;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.history-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-icon {
+  color: #4a5568;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-controls button {
+  background-color: #fff;
+  border: 1px solid #cbd5e0;
+  color: #4a5568;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-controls button:hover {
+  background-color: #f7fafc;
+  border-color: #a0aec0;
+}
+
+.filter-controls button.active {
+  background-color: #4299e1;
+  color: #fff;
+  border-color: #4299e1;
+}
+
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.activity-card {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  display: flex;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.activity-card:hover {
+  transform: translateY(-3px);
+}
+
+.activity-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  color: #fff;
+}
+
+/* Colors for activity types */
+.activity-card.receipt .activity-icon { background-color: #48bb78; } /* Green */
+.activity-card.sale .activity-icon { background-color: #4299e1; } /* Blue */
+.activity-card.adjustment .activity-icon { background-color: #ed8936; } /* Orange */
+
+.activity-icon svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.activity-content {
+  padding: 1rem 1.5rem;
+  flex-grow: 1;
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+
+.activity-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.batch-tag {
+  background-color: #edf2f7;
+  color: #718096;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  margin-left: 0.75rem;
+  font-weight: 500;
+}
+
+.activity-date {
+  font-size: 0.875rem;
+  color: #718096;
+}
+
+.activity-details {
+  display: grid;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.product-info strong {
+  display: block;
+  font-weight: 600;
+  color: #2d3748;
+}
+.product-info span {
+  color: #a0aec0;
+}
+
+.quantity-info, .receipt-info, .user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quantity-label, .info-label {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.quantity-value, .info-value {
+  background-color: #f7fafc;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e2e8f0;
+}
+
+.user-info {
+  color: #718096;
+}
+.user-icon {
+  margin-right: 0.25rem;
+}
+
+.activity-notes {
+  margin-top: 0.5rem;
+  font-style: italic;
+  color: #718096;
+  border-left: 3px solid #e2e8f0;
+  padding-left: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  border: 2px dashed #e2e8f0;
+  border-radius: 0.5rem;
+  color: #718096;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #cbd5e0;
+}
+
+.loading-spinner, .error-message {
+  text-align: center;
+  padding: 4rem;
+  font-size: 1.25rem;
+  color: #4a5568;
+}

@@ -1,6 +1,6 @@
 // src/components/ProtectedRoute.js
 import { Navigate } from 'react-router-dom';
-import { usePermissions } from '../hooks/usePermissions';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const ProtectedRoute = ({ children, requiredPermissions }) => {
   const { hasAllPermissions } = usePermissions();

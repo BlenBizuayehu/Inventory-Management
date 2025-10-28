@@ -1,78 +1,194 @@
-.dashboard-page{
-        margin-top: 100px;
+.dashboard-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-/* Add these styles to your existing CSS */
-.price-invoice-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
-  margin-top: 15px;
+.page-title {
+  color: var(--primary);
+  margin-bottom: 20px;
 }
 
-.price-invoice-card {
-  border: 1px solid #ddd;
+.page-subtitle {
+  color: var(--text);
+  margin-bottom: 25px;
+  font-size: 0.95rem;
+}
+
+.alert {
+  padding: 12px 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.alert-error {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-left: 4px solid #dc2626;
+}
+
+.alert-success {
+  background-color: #d1fae5;
+  color: #065f46;
+  border-left: 4px solid #10b981;
+}
+
+.current-pricing-container {
+  background-color: var(--card-bg);
+  padding: 25px;
   border-radius: 8px;
-  padding: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px var(--shadow);
 }
 
-.price-invoice-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
+.current-pricing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
 }
 
-.price-invoice-card.selected {
-  border-color: #4CAF50;
-  background-color: #f8fff8;
-}
-
-.price-invoice-header {
+.search-container {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
 }
 
-.price-invoice-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  font-size: 0.9em;
-  color: #555;
-}
-
-.price-invoice-card {
-  background: white;
+.search-container input {
+  padding: 8px 15px 8px 35px;
+  border: 1px solid var(--border);
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
-  overflow: hidden;
+  width: 250px;
+  font-size: 14px;
 }
 
-.price-invoice-details {
-  padding: 1rem;
-  background: #f9f9f9;
-  border-top: 1px solid #eee;
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: #666;
 }
 
-.batch-price-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 10px;
+.save-button {
+  display: flex;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.batch-prices-header {
+.save-button:hover {
+  background-color: #b82d26;
+}
+
+.save-button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.current-price-table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.price-table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-  gap: 10px;
-  font-weight: bold;
-  padding: 10px 0;
-  border-bottom: 2px solid #ddd;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 12px 0;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
 }
 
+.price-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
 
+.product-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.sku, .current-price {
+  font-size: 0.9rem;
+}
+
+.price-input {
+  display: flex;
+  align-items: center;
+}
+
+.currency-symbol {
+  margin-right: 5px;
+  color: var(--text);
+}
+
+.price-input input {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: 100px;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.pagination-controls button {
+  padding: 6px 12px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  color: var(--primary);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.view-history-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-history-link:hover {
+  text-decoration: underline;
+}

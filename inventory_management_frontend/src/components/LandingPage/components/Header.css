@@ -149,15 +149,7 @@ body {
   color: #666;
 }
 
-/* Sidebar positioning (add to your Sidebar.css) */
-.sidebar.right {
-  right: -300px;
-  left: auto;
-}
 
-.sidebar.right.open {
-  right: 0;
-}
 
 
 

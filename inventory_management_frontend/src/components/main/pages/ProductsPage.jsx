@@ -1,12 +1,14 @@
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { FaBoxOpen, FaChevronDown, FaChevronUp, FaEdit, FaListUl, FaPlus, FaTrash } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom"; // Add this import
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Add this import
+import api, { API_BASE_URL } from "../../../api";
 import "./ProductsPage.css";
 
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
+  const location = useLocation();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -34,75 +36,56 @@ const [submitError, setSubmitError] = useState(null);    // Add this
   const imageUrlRef = useRef(null);
 
   // Fetch products only
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoading(true);
-        
-        // First try to get real data
-        try {
-          const response = await axios.get("http://localhost:5000/api/products", {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-          if (response.data?.data?.length > 0) {
-            setProducts(response.data.data);
-            setFeaturedProducts(response.data.data.slice(0, 6));
-            return;
-          }
-        } catch (apiError) {
-          console.log("API not available, using mock data", apiError);
-        }
-        // Fallback to mock data if API fails
-        const mockProducts = [
-          {
-            _id: "1",
-            name: "Total Quartz 9000",
-            description: "Fully synthetic engine oil",
-            category: "1",
-            unit: "liter",
-            piecesPerPack:3,
-            imageUrl: "https://via.placeholder.com/150"
-          },
-          {
-            _id: "2",
-            name: "Total Transmission Fluid",
-            description: "High-performance gear oil",
-            category: "2",
-            unit: "liter",
-            piecesPerPack:3,
-            imageUrl: "https://via.placeholder.com/150"
-          }
-        ];
-        setProducts(mockProducts);
-        setFeaturedProducts(mockProducts);
-      } catch (err) {
-        setError("Failed to fetch products");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchProducts();
-  }, []);
+   const fetchAllData = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      // Use your 'api' instance for clean, authorized requests
+      const [productsRes, categoriesRes] = await Promise.all([
+        api.get("/products"),
+        api.get("/categories")
+      ]);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/categories");
-        setCategories(res.data?.data || []);
-      } catch (err) {
-        console.error("Failed to fetch categories", err);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-    const handleProductClick = (productId) => {
-    navigate(`/allproducts?productId=${productId}`);
+      const fetchedProducts = productsRes.data?.data || [];
+      setProducts(fetchedProducts);
+      setFeaturedProducts(fetchedProducts.slice(0, 6));
+      setCategories(categoriesRes.data?.data || []);
+    } catch (err) {
+      setError("Failed to fetch page data. The server may be offline.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Fetch all data on component mount
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+
+   useEffect(() => {
+    const productToEdit = location.state?.productToEdit;
+    if (productToEdit) {
+      setEditingId(productToEdit._id);
+      setFormData({
+        name: productToEdit.name,
+        description: productToEdit.description || "",
+        category: productToEdit.category,
+        unit: productToEdit.unit || "piece",
+        piecesPerPack: productToEdit.piecesPerPack || 1,
+        image: null,
+        imageUrl: productToEdit.imageUrl ? `${API_BASE_URL}/uploads/${productToEdit.imageUrl}` : ""
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [location.state]); 
+
+
+  const handleProductClick = (productId) => {
+  // Change this line - use the correct route path
+  navigate(`/owner/dashboard/allproducts?productId=${productId}`);
+};
 
   const getCategoryName = (categoryId) => {
     const category = categories.find(c => c._id === categoryId);
@@ -141,115 +124,45 @@ const [submitError, setSubmitError] = useState(null);    // Add this
     }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError("");
-
-  try {
-    const formDataToSend = new FormData();
-    formDataToSend.append("name", formData.name);
-    formDataToSend.append("description", formData.description);
-    formDataToSend.append("category", formData.category);
-    formDataToSend.append("unit", formData.unit);
-    formDataToSend.append("piecesPerPack", formData.piecesPerPack);
-    if (formData.image) {
-      formDataToSend.append("image", formData.image);
-    }
-
-    let response;
-    const token = localStorage.getItem("token");
-    
-    if (editingId) {
-      response = await axios.put(
-        `http://localhost:5000/api/products/${editingId}`,
-        formDataToSend,
-        {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
-        }
-      );
-    } else {
-      response = await axios.post(
-        "http://localhost:5000/api/products",
-        formDataToSend,
-        {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
-        }
-      );
-    }
-
-    // Update products list
-    if (editingId) {
-      setProducts(products.map(p => 
-        p._id === editingId ? response.data.data : p
-      ));
-    } else {
-      setProducts([...products, response.data.data]);
-    }
-    
-    resetForm();
-  } catch (err) {
-    setError(err.response?.data?.message || "Failed to save product");
-    console.error(err);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-
+ const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/products/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setProducts((prev) => prev.filter((p) => p._id !== id));
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("category", formData.category);
+      formDataToSend.append("unit", formData.unit);
+      formDataToSend.append("piecesPerPack", formData.piecesPerPack);
+      if (formData.image) formDataToSend.append("image", formData.image);
+      
+      if (editingId) {
+        await api.put(`/products/${editingId}`, formDataToSend, { headers: { "Content-Type": "multipart/form-data" } });
+      } else {
+        await api.post("/products", formDataToSend, { headers: { "Content-Type": "multipart-form-data" } });
+      }
+      resetForm();
+      fetchAllData();
     } catch (err) {
-      alert("Failed to delete product");
-      console.error(err);
+      setError(err.response?.data?.error || "Failed to save product.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+  
 
-  const handleEdit = (product) => {
-    setEditingId(product._id);
-    setFormData({
-      name: product.name,
-      description: product.description || "",
-      category: product.category,
-      unit: product.unit || "piece",
-      piecesPerPack: product.piecesPerPack || 1,
-      image: null,
-      imageUrl: product.imageUrl || ""
-    });
-  };
 
   const resetForm = () => {
-    // Revoke previous object URL if any
-    if (imageUrlRef.current) {
-      URL.revokeObjectURL(imageUrlRef.current);
-      imageUrlRef.current = null;
-    }
+    if (imageUrlRef.current) URL.revokeObjectURL(imageUrlRef.current);
+    imageUrlRef.current = null;
     setFormData({
-      name: "",
-      description: "",
-      category: "",
-      unit: "piece",
-      piecesPerPack: 1,
-      image: null,
-      imageUrl: "",
-      newCategory: ""
+      name: "", description: "", category: "", unit: "piece",
+      piecesPerPack: 1, image: null, imageUrl: "", newCategory: ""
     });
     setEditingId(null);
   };
+
 
   // --- Category add ---
   const handleAddCategory = async (e) => {
@@ -455,39 +368,20 @@ const handleSubmit = async (e) => {
                     onClick={() => handleProductClick(product._id)}
                   >
                     <div className="product-image">
-                      {product.imageUrl ? (
-                        <img src={product.imageUrl} alt={product.name} />
-                      ) : (
-                        <div className="image-placeholder">
-                          <FaBoxOpen />
-                        </div>
-                      )}
-                    </div>
+                    {product.imageUrl ? (
+                      // --- THIS IS THE FIX ---
+                      // Construct the full URL for display
+                      <img src={`${API_BASE_URL}/uploads/${product.imageUrl}`} alt={product.name} />
+                    ) : (
+                      <div className="image-placeholder"><FaBoxOpen /></div>
+                    )}
+                  </div>
                     <div className="product-info">
                       <h3>{product.name}</h3>
                       <p className="category">{productCategory?.name || "Uncategorized"}</p>
                       <p className="description">{product.description || "No description"}</p>
                     </div>
-                    <div className="product-actions">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(product);
-                        }} 
-                        className="edit-btn"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(product._id);
-                        }}
-                        className="delete-btn"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
+                    
                   </div>
                 );
               })
@@ -497,7 +391,7 @@ const handleSubmit = async (e) => {
       </div>
 
       <div className="page-footer">
-        <Link to="/allproducts" className="view-all-button">
+        <Link to="/owner/dashboard/allproducts" className="view-all-button">
           View All Products
         </Link>
       </div>

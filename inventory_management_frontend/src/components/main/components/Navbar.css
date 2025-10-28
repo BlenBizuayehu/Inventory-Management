@@ -97,9 +97,7 @@
 
 /* Responsive styles */
 @media (max-width: 768px) {
-  .navbar-container {
-    flex-direction: column;
-  }
+
   
   .navbar-brand {
     margin-bottom: 1rem;

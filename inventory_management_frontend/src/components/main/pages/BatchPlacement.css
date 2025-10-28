@@ -1,7 +1,6 @@
 /* BatchPlacement.css */
 .batch-placement {
   max-width: 1000px;
-  margin: 0 auto;
   padding: 20px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -58,7 +57,7 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-button {
+.back-button, .confirm-placements-button {
   background-color: #3498db;
   color: white;
   border: none;
@@ -70,11 +69,11 @@ button {
   margin-top: 20px;
 }
 
-button:hover {
+.back-button, .confirm-placements-button:hover {
   background-color: #2980b9;
 }
 
-button:disabled {
+.back-button, .confirm-placements-button:disabled {
   background-color: #bdc3c7;
   cursor: not-allowed;
 }
@@ -342,4 +341,27 @@ button:disabled {
   text-align: center;
   padding: 30px;
   color: #7f8c8d;
+}
+
+.placement-details {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.placement-details table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.placement-details th, 
+.placement-details td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.placement-details th {
+  background-color: #eaeaea;
 }

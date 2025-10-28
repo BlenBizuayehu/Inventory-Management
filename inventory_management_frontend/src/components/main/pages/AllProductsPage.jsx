@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { FaArrowLeft, FaBoxOpen } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { FaArrowLeft, FaBoxOpen, FaEdit, FaTrash } from "react-icons/fa";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import api, { API_BASE_URL } from "../../../api";
 import "./AllProductsPage.css";
 
 const ProductsListPage = () => {
@@ -10,6 +11,8 @@ const ProductsListPage = () => {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+   const navigate = useNavigate();
+     const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +39,7 @@ const ProductsListPage = () => {
     fetchData();
   }, []);
 
-    useEffect(() => {
+     useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const productId = searchParams.get('productId');
     
@@ -44,9 +47,33 @@ const ProductsListPage = () => {
       const product = products.find(p => p._id === productId);
       if (product) {
         setSelectedProduct(product);
+        // Scroll to top to see the details
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     }
   }, [location.search, products]);
+
+
+
+   const handleEdit = (product) => {
+    // Navigate to the management page and pass the product state
+    // The management page will need to be updated to receive this state
+    navigate('/owner/dashboard/products', { state: { productToEdit: product } });
+  };
+
+
+
+
+   const handleDelete = async (productId) => {
+    if (!window.confirm("Are you sure? This will permanently delete the product.")) return;
+    try {
+        await api.delete(`/products/${productId}`);
+        // Refetch the data to show the updated list
+        fetchData(); 
+    } catch (err) {
+        setError(err.response?.data?.error || "Failed to delete product.");
+    }
+  };
 
   const getCategoryName = (categoryId) => {
     const category = categories.find(c => c._id === categoryId);
@@ -87,12 +114,12 @@ const ProductsListPage = () => {
         <div className="product-image-container">
             {selectedProduct.imageUrl ? (
             <img 
-                src={selectedProduct.imageUrl} 
+                src={`${API_BASE_URL}/uploads/${selectedProduct.imageUrl}`} 
                 alt={selectedProduct.name} 
                 className="product-detail-image"
             />
             ) : (
-            <div className="image-placeholder">No Image</div>
+            <div className="detail-image-placeholder">No Image</div>
             )}
         </div>
         <div className="product-info">
@@ -109,6 +136,26 @@ const ProductsListPage = () => {
             <span className="detail-label">Product ID:</span>
             <span>{selectedProduct._id}</span>
             </div>
+            <div className="actions-cell">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(selectedProduct);
+                        }} 
+                        className="edit-btn"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(selectedProduct._id);
+                        }}
+                        className="delete-btn"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
         </div>
         </div>
     </div>
@@ -150,12 +197,20 @@ const ProductsListPage = () => {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleProductSelect(product);
+                          handleEdit(product);
                         }} 
-                        className="view-button"
-                        title="View Details"
+                        className="edit-btn"
                       >
-                        View
+                        <FaEdit />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(product._id);
+                        }}
+                        className="delete-btn"
+                      >
+                        <FaTrash />
                       </button>
                     </td>
                   </tr>

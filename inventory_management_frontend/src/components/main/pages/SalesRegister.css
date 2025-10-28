@@ -1,0 +1,483 @@
+.sales-register-container {
+  max-width: 1200px;
+
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.sales-register-title {
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.batch-tracking-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.batch-tracking-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.batch-tracking-info {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.sales-register-form {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+.product-selection {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.search-container {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 10px 15px 10px 35px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.product-search-results {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.product-result-item {
+  padding: 10px;
+  border-bottom: 1px solid #dee2e6;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.product-result-item:hover {
+  background-color: #e9ecef;
+}
+
+.product-result-item:last-child {
+  border-bottom: none;
+}
+
+.product-name {
+  font-weight: 500;
+}
+
+.product-sku {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.product-price {
+  font-weight: 500;
+  color: #28a745;
+}
+
+.batch-selection {
+  margin: 15px 0;
+}
+
+.batch-selection select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.no-batches {
+  color: #dc3545;
+  font-size: 0.9rem;
+  padding: 5px;
+}
+
+.quantity-input {
+  margin: 15px 0;
+}
+
+.quantity-input label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.quantity-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.add-item-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.add-item-btn:hover {
+  background-color: #0069d9;
+}
+
+.add-item-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.sale-items-list {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.no-items {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+.sale-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.sale-items-table th {
+  text-align: left;
+  padding: 10px;
+  background-color: #e9ecef;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.sale-items-table td {
+  padding: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.batch-number {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: monospace;
+}
+
+.remove-item-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.sale-totals {
+  margin-top: 20px;
+  border-top: 2px solid #dee2e6;
+  padding-top: 10px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.grand-total {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #dee2e6;
+}
+
+.sale-details {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.form-group textarea {
+  min-height: 80px;
+}
+
+.submit-sale-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.submit-sale-btn:hover {
+  background-color: #218838;
+}
+
+.submit-sale-btn:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .sales-register-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Add these new styles to your existing CSS */
+
+.quantity-inputs {
+  display: flex;
+  gap: 15px;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.quantity-input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.quantity-input label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.quantity-input input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+}
+
+.quantity-summary {
+  flex: 100%;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+
+/* Add these new styles to your existing CSS */
+
+.todays-sales-summary {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.todays-sales-summary h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.no-sales {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+.sales-list {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.sale-card {
+  background-color: white;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.sale-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.sale-number {
+  font-weight: 500;
+}
+
+.sale-time {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.sale-total {
+  font-weight: bold;
+}
+
+.sale-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sale-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.item-name {
+  flex: 2;
+}
+
+.item-quantity {
+  flex: 1;
+  text-align: center;
+}
+
+.item-price {
+  flex: 1;
+  text-align: right;
+}
+
+.daily-totals {
+  background-color: white;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+.daily-totals h4 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.product-pack-size {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 3px;
+}
+
+.sale-items-table td:nth-child(3) {
+  white-space: nowrap;
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.alert-error {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 15px;
+  border-radius: 4px;
+  margin: 20px;
+  text-align: center;
+}
+
+.shop-selection {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.shop-select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}

@@ -61,36 +61,42 @@ const TransferHistoryPage = () => {
         <h3>Current Transfer Details</h3>
         
         <div className="detail-grid">
-          <div className="detail-item">
-            <span className="detail-label">Transfer ID:</span>
-            <span>{transfer._id}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">Date:</span>
-            <span>{new Date(transfer.transferDate).toLocaleString()}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">
-              <FaWarehouse className="icon" /> From:
-            </span>
-            <span>{transfer.fromLocation}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">
-              <FaStore className="icon" /> To:
-            </span>
-            <span>{transfer.toLocation}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">
-              <FaUser className="icon" /> User:
-            </span>
-            <span>
-              {transfer.transferredBy?.name || 'System'}
-              {transfer.transferredBy?.email && ` (${transfer.transferredBy.email})`}
-            </span>
-          </div>
-        </div>
+  <div className="detail-item">
+    <span className="detail-label">Transfer ID:</span>
+    <span>{transfer._id.slice(-6)}</span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">Date:</span>
+    <span>{new Date(transfer.transferDate).toLocaleString()}</span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">
+      <FaWarehouse className="icon" /> From:
+    </span>
+    <span>{transfer.fromLocation?.name || transfer.fromLocation}</span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">
+      <FaStore className="icon" /> To:
+    </span>
+    <span>{transfer.toLocation?.name || transfer.toLocation}</span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">
+      <FaUser className="icon" /> User:
+    </span>
+    <span>
+      {transfer.transferredBy?.name || 'System'}
+      {transfer.transferredBy?.email && ` (${transfer.transferredBy.email})`}
+    </span>
+  </div>
+  {transfer.notes && (
+    <div className="detail-item notes-item">
+      <span className="detail-label">Notes:</span>
+      <span>{transfer.notes}</span>
+    </div>
+  )}
+</div>
 
         <div className="products-section">
           <h3>
@@ -140,26 +146,32 @@ const TransferHistoryPage = () => {
                 <h4>Before Edit:</h4>
                 <div className="transfer-details">
                   <div className="detail-grid">
-                    <div className="detail-item">
-                      <span className="detail-label">From:</span>
-                      <span>{history.previousState?.fromLocation || 'N/A'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">To:</span>
-                      <span>{history.previousState?.toLocation || 'N/A'}</span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Date:</span>
-                      <span>
-                        {history.previousState?.transferDate ? 
-                          new Date(history.previousState.transferDate).toLocaleString() : 'N/A'}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">By:</span>
-                      <span>{history.previousState?.transferredBy?.name || 'System'}</span>
-                    </div>
-                  </div>
+  <div className="detail-item">
+    <span className="detail-label">From:</span>
+    <span>{history.previousState?.fromLocation?.name || history.previousState?.fromLocation || 'N/A'}</span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">To:</span>
+    <span>{history.previousState?.toLocation?.name || history.previousState?.toLocation || 'N/A'}</span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">Date:</span>
+    <span>
+      {history.previousState?.transferDate ? 
+        new Date(history.previousState.transferDate).toLocaleString() : 'N/A'}
+    </span>
+  </div>
+  <div className="detail-item">
+    <span className="detail-label">By:</span>
+    <span>{history.previousState?.transferredBy?.name || 'System'}</span>
+  </div>
+  {history.previousState?.notes && (
+    <div className="detail-item notes-item">
+      <span className="detail-label">Notes:</span>
+      <span>{history.previousState.notes}</span>
+    </div>
+  )}
+</div>
                   
                   <h5>Products:</h5>
                   <div className="products-grid">

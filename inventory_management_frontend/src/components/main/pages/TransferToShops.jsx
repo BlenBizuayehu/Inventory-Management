@@ -1,26 +1,31 @@
 import { useEffect, useState } from 'react';
-import { FaExchangeAlt, FaHistory, FaStore } from 'react-icons/fa';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaExchangeAlt, FaHistory, FaTrash } from 'react-icons/fa';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../../../api';
 import './TransferToShops.css';
 
 const TransferToShops = () => {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   const currentUser = JSON.parse(localStorage.getItem('user')) || {};
-  const [transferData, setTransferData] = useState({
-    fromLocation: '',
-    toLocation: '',
-    transferDate: new Date().toISOString().split('T')[0],
-    transferredBy: currentUser._id || '',
-    products: []
+  
+  const editData = location.state?.editData;
+  const [isEditMode] = useState(!!editData);
+  const [transferId] = useState(editData?.id || null);
+  
+  const [formData, setFormData] = useState({
+    fromLocation: editData?.fromLocation || '',
+    toLocation: editData?.toLocation || '',
+    transferDate: editData?.transferDate ? new Date(editData.transferDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    transferredBy: editData?.transferredBy || currentUser._id || '',
+    products: editData?.products || [],
+    notes: editData?.notes || ''
   });
 
   const [currentProduct, setCurrentProduct] = useState({
     product: '',
     packs: '',
-    pieces: '',
-    batchNumber: ''
+    pieces: ''
   });
 
   const [stores, setStores] = useState([]);
@@ -29,94 +34,72 @@ const TransferToShops = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        
-        const productsRes = await api.get('/products?select=name sku packSize stockPacks stockPieces');
-        setProducts(productsRes.data.data);
-        
-        const locationsRes = await api.get('/transfers/locations');
-        setStores(locationsRes.data.data.stores);
-        setShops(locationsRes.data.data.shops);
-        
-        if (location.state?.editData) {
-          setIsEditMode(true);
-          const { editData } = location.state;
-          
-          const formattedDate = editData.transferDate.split('T')[0];
-          
-          setTransferData({
-            fromLocation: editData.fromLocation,
-            toLocation: editData.toLocation,
-            transferDate: formattedDate,
-            transferredBy: editData.transferredBy || currentUser._id || '',
-            products: editData.products.map(p => {
-              const product = productsRes.data.data.find(prod => prod._id === p.product);
-              return {
-                product: p.product,
-                productName: p.productName,
-                packs: p.packs || 0,
-                pieces: p.pieces || 0,
-                batchNumber: p.batchNumber || '',
-                packSize: product?.packSize || 1,
-                stockPacks: product?.stockPacks || 0,
-                stockPieces: product?.stockPieces || 0
-              }
-            })
-          });
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      
+      const [productsRes, locationsRes] = await Promise.all([
+        api.get('/products?select=name sku piecesPerPack'),
+        api.get('/transfers/locations'),
+        // In your API calls, make sure to populate the locations:
+        api.get('/transfers?populate=fromLocation,toLocation,transferredBy,products.product')
+      ]);
+      
+      setProducts(productsRes.data.data);
+      setStores(locationsRes.data.data.stores);
+      setShops(locationsRes.data.data.shops);
+      
+      if (isEditMode) {
+        // Ensure we have the full transfer data if coming from history
+        let fullTransfer = editData;
+        if (editData.id && !editData.fromLocation?.name) {
+          const res = await api.get(`/transfers/${editData.id}`);
+          fullTransfer = res.data.data;
         }
-      } catch (err) {
-        console.error("API Error:", err);
-        setError(err.response?.data?.error || err.message || 'Failed to fetch data');
-      } finally {
-        setIsLoading(false);
+
+        setFormData(prev => ({
+          ...prev,
+          fromLocation: fullTransfer.fromLocation?._id || fullTransfer.fromLocation,
+          toLocation: fullTransfer.toLocation?._id || fullTransfer.toLocation,
+          transferDate: fullTransfer.transferDate ? new Date(fullTransfer.transferDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          transferredBy: fullTransfer.transferredBy?._id || fullTransfer.transferredBy,
+          notes: fullTransfer.notes || '',
+          products: fullTransfer.products.map(p => ({
+            ...p,
+            product: p.product?._id || p.product,
+            productName: p.productName || productsRes.data.data.find(prod => prod._id === (p.product?._id || p.product))?.name || 'Unknown Product',
+            piecesPerPack: p.product?.packSize || p.piecesPerPack || 1
+          }))
+        }));
       }
-    };
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load initial data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [location.state]);
+  fetchData();
+}, [isEditMode]);
 
-  const fetchBatchesForProduct = async (productId, location) => {
-  try {
-    const response = await api.get(`/batches?product=${productId}&location=${location}`);
-    return response.data.data;
-  } catch (err) {
-    console.error("Failed to fetch batches:", err);
-    return [];
-  }
-};
-
-
-// Modify your handleAddProduct function
-const handleAddProduct = async () => {
-  if (!currentProduct.product || (!currentProduct.packs && !currentProduct.pieces)) {
-    setError('Please select a product and enter at least packs or pieces');
-    return;
-  }
-
-  const selectedProduct = products.find(p => p._id === currentProduct.product);
-  const packs = parseInt(currentProduct.packs) || 0;
-  const pieces = parseInt(currentProduct.pieces) || 0;
-  
-  if (packs < 0 || pieces < 0) {
-    setError('Quantities cannot be negative');
-    return;
-  }
-
-  try {
-    let availableBatches = [];
-    if (transferData.fromLocation) {
-      availableBatches = await fetchBatchesForProduct(
-        currentProduct.product, 
-        transferData.fromLocation
-      );
+  const handleAddProduct = () => {
+    if (!currentProduct.product || (!currentProduct.packs && !currentProduct.pieces)) {
+      setError('Please select a product and enter quantity');
+      return;
     }
 
-    setTransferData(prev => ({
+    const selectedProduct = products.find(p => p._id === currentProduct.product);
+    const packs = parseInt(currentProduct.packs) || 0;
+    const pieces = parseInt(currentProduct.pieces) || 0;
+    
+    if (packs < 0 || pieces < 0) {
+      setError('Quantities cannot be negative');
+      return;
+    }
+
+    setFormData(prev => ({
       ...prev,
       products: [
         ...prev.products,
@@ -125,11 +108,7 @@ const handleAddProduct = async () => {
           productName: selectedProduct.name,
           packs,
           pieces,
-          batchNumber: currentProduct.batchNumber || '',
-          availableBatches,
-          packSize: selectedProduct.packSize,
-          stockPacks: selectedProduct.stockPacks,
-          stockPieces: selectedProduct.stockPieces
+          piecesPerPack: selectedProduct.piecesPerPack
         }
       ]
     }));
@@ -137,17 +116,12 @@ const handleAddProduct = async () => {
     setCurrentProduct({
       product: '',
       packs: '',
-      pieces: '',
-      batchNumber: ''
+      pieces: ''
     });
-  } catch (err) {
-    console.error("Error adding product:", err);
-    setError('Failed to add product. Please try again.');
-  }
-};
+  };
 
   const handleRemoveProduct = (index) => {
-    setTransferData(prev => ({
+    setFormData(prev => ({
       ...prev,
       products: prev.products.filter((_, i) => i !== index)
     }));
@@ -157,7 +131,7 @@ const handleAddProduct = async () => {
     const numValue = parseInt(value) || 0;
     if (numValue < 0) return;
 
-    setTransferData(prev => {
+    setFormData(prev => {
       const updatedProducts = [...prev.products];
       updatedProducts[index] = {
         ...updatedProducts[index],
@@ -172,82 +146,133 @@ const handleAddProduct = async () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setTransferData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError(null);
   };
 
   const calculateTotalPieces = (product) => {
-    return (product.packs * (product.packSize || 1)) + product.pieces;
+    const packSize = product.piecesPerPack || 1;
+    const packs = product.packs || 0;
+    const pieces = product.pieces || 0;
+    return (packs * packSize) + pieces;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (transferData.products.length === 0) {
-      setError('Please add at least one product to transfer');
-      return;
+  e.preventDefault();
+  
+  if (formData.products.length === 0) {
+    setError('Please add at least one product to transfer');
+    return;
+  }
+  
+  if (!formData.fromLocation || !formData.toLocation) {
+    setError('Please select both source and destination locations');
+    return;
+  }
+
+  if (formData.fromLocation === formData.toLocation) {
+    setError('Source and destination locations cannot be the same');
+    return;
+  }
+
+  // Validate products before sending
+  const validatedProducts = formData.products.map(product => {
+    const packs = Math.max(0, parseInt(product.packs, 10)) || 0;
+    const pieces = Math.max(0, parseInt(product.pieces, 10)) || 0;
+    const piecesPerPack = product.piecesPerPack || 1;
+
+    if ((packs === 0 && pieces === 0) || isNaN(packs) || isNaN(pieces)) {
+      throw new Error(`Invalid quantities for ${product.productName}`);
+    }
+
+    if (pieces >= piecesPerPack) {
+      throw new Error(`Pieces (${pieces}) cannot be ≥ pack size (${piecesPerPack}) for ${product.productName}`);
+    }
+
+    return {
+      product: product.product,
+      packs,
+      pieces
+    };
+  });
+
+  setIsLoading(true);
+  setError(null);
+  setSuccess(null);
+
+  try {
+    const payload = {
+      fromLocation: formData.fromLocation,
+      toLocation: formData.toLocation,
+      transferDate: formData.transferDate,
+      transferredBy: formData.transferredBy,
+      products: validatedProducts,
+      notes: formData.notes
+    };
+
+    let response;
+    if (isEditMode && transferId) {
+      response = await api.put(`/transfers/${transferId}`, payload);
+      setSuccess('Transfer updated successfully!');
+    } else {
+      response = await api.post('/transfers', payload);
+      setSuccess('Transfer created successfully!');
     }
     
-    if (!transferData.fromLocation || !transferData.toLocation) {
-      setError('Please select both source and destination locations');
-      return;
+    if (!isEditMode) {
+      setFormData(prev => ({
+        ...prev,
+        products: [],
+        transferDate: new Date().toISOString().split('T')[0],
+        notes: ''
+      }));
     }
-
-    for (const product of transferData.products) {
-      if (product.packs <= 0 && product.pieces <= 0) {
-        setError(`Product ${product.productName} must have at least packs or pieces`);
-        return;
-      }
-    }
-
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const payload = {
-        ...transferData,
-        products: transferData.products.map(p => ({
-          product: p.product,
-          productName: p.productName,
-          packs: p.packs,
-          pieces: p.pieces,
-          batchNumber: p.batchNumber
-        }))
-      };
-
-      if (isEditMode) {
-        await api.put(`/transfers/${location.state.editData.id}`, {
-          ...payload,
-          editedBy: currentUser._id
-        });
-        setSuccess('Transfer updated successfully!');
-        navigate('/dashboard/transfers/records');
-      } else {
-        await api.post('/transfers', payload);
-        setSuccess('Transfer created successfully!');
-        setTransferData({
-          fromLocation: transferData.fromLocation,
-          toLocation: transferData.toLocation,
-          transferDate: new Date().toISOString().split('T')[0],
-          transferredBy: transferData.transferredBy,
-          products: []
-        });
+    
+    setTimeout(() => navigate('/owner/dashboard/transfers/records'), 2000);
+  } catch (err) {
+    // Enhanced error handling to show backend messages properly
+    let errorMessage = 'Failed to process transfer. Please try again.';
+    
+    if (err.response?.data) {
+      const errorData = err.response.data;
+      
+      // Handle different backend response formats
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
       }
       
-      setCurrentProduct({
-        product: '',
-        packs: '',
-        pieces: '',
-        batchNumber: ''
-      });
-    } catch (err) {
-      console.error("Transfer error:", err);
-      setError(err.response?.data?.error || 
-        (isEditMode ? 'Failed to update transfer' : 'Failed to create transfer'));
-    } finally {
-      setIsLoading(false);
+      // Handle unavailable products with specific messages
+      if (errorData.unavailableProducts && Array.isArray(errorData.unavailableProducts)) {
+        const unavailableList = errorData.unavailableProducts.map(up => 
+          `${up.product}: ${up.reason}`
+        ).join(', ');
+        errorMessage = `${errorMessage}. ${unavailableList}`;
+      }
+      
+      // Handle warnings (partial success)
+      if (errorData.warnings && errorData.warnings.unavailableProducts) {
+        const warningList = errorData.warnings.unavailableProducts.map(up => 
+          `${up.product}: ${up.reason}`
+        ).join(', ');
+        errorMessage = `Transfer partially completed. Some products could not be transferred: ${warningList}`;
+        setSuccess('Transfer completed with warnings. Check the details below.');
+      }
+    } else if (err.message) {
+      errorMessage = err.message;
     }
-  };
+    
+    setError(errorMessage);
+    
+    // If it's a validation error, show more details
+    if (err.response?.status === 400 || err.response?.status === 422) {
+      console.error('Validation error details:', err.response.data);
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="dashboard-page">
@@ -255,191 +280,48 @@ const handleAddProduct = async () => {
         {isEditMode ? 'Edit Transfer' : 'Transfer Inventory'}
       </h1>
       
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
-
+{error && (
+  <div className={`alert ${error.includes('partially completed') ? 'alert-warning' : 'alert-error'}`}>
+    {error}
+  </div>
+)}
+{success && <div className="alert alert-success">{success}</div>}
       <form onSubmit={handleSubmit} className="transfer-form">
-        <div className="product-selection-section">
-          <h3>Add Products to Transfer</h3>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Product</label>
-              <select
-                name="product"
-                value={currentProduct.product}
-                onChange={(e) => setCurrentProduct({...currentProduct, product: e.target.value})}
-                disabled={isLoading}
-              >
-                <option value="">Select Product</option>
-                {products?.map(product => (
-                  <option key={product._id} value={product._id}>
-                    {product.name} ({product.stockPacks}p + {product.stockPieces}pc)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Packs</label>
-              <input
-                type="number"
-                name="packs"
-                value={currentProduct.packs}
-                onChange={(e) => setCurrentProduct({...currentProduct, packs: e.target.value})}
-                min="0"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Pieces</label>
-              <input
-                type="number"
-                name="pieces"
-                value={currentProduct.pieces}
-                onChange={(e) => setCurrentProduct({...currentProduct, pieces: e.target.value})}
-                min="0"
-                disabled={isLoading}
-              />
-            </div>
-
-            
-            <div className="form-group">
-
-              <button 
-                type="button" 
-                className="add-product-button"
-                onClick={handleAddProduct}
-                disabled={isLoading || !currentProduct.product || (!currentProduct.packs && !currentProduct.pieces)}
-              >
-                Add Product
-              </button>
-            </div>
-          </div>
-
-          {transferData.products.length > 0 && (
-            <div className="product-list">
-              <h4>Products to Transfer ({transferData.products.length})</h4>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Packs</th>
-                    <th>Pieces</th>
-                    <th>Total</th>
-                    <th>Batch</th>
-                    <th>Stock</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transferData.products.map((item, index) => {
-                    const packSize = item.packSize || 1;
-                    const totalPieces = (item.packs * packSize) + item.pieces;
-                    const stockPieces = (item.stockPacks * packSize) + item.stockPieces;
-                    
-                    return (
-                      <tr key={index}>
-                        <td>{item.productName}</td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.packs}
-                            onChange={(e) => handleUpdateProduct(index, 'packs', e.target.value)}
-                            className="quantity-input"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            min="0"
-                            value={item.pieces}
-                            onChange={(e) => handleUpdateProduct(index, 'pieces', e.target.value)}
-                            className="quantity-input"
-                          />
-                        </td>
-                        <td>{totalPieces} pc</td>
-                        <td>{item.batchNumber || '-'}</td>
-                        <td>{item.stockPacks}p + {item.stockPieces}pc</td>
-                        <td>
-              {item.availableBatches?.length > 0 ? (
-                <select
-                  value={item.batchNumber || ''}
-                  onChange={(e) => handleUpdateProduct(index, 'batchNumber', e.target.value)}
-                  className="batch-select"
-                >
-                  <option value="">Auto-select</option>
-                  {item.availableBatches.map(batch => (
-                    <option key={batch._id} value={batch.batchNumber}>
-                      {batch.batchNumber} ({batch.availablePacks}p + {batch.availablePieces}pc)
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={item.batchNumber || ''}
-                  onChange={(e) => handleUpdateProduct(index, 'batchNumber', e.target.value)}
-                  placeholder="Enter batch"
-                />
-              )}
-            </td>
-                        <td>
-                          <button 
-                            type="button" 
-                            className="remove-button"
-                            onClick={() => handleRemoveProduct(index)}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
         <div className="form-row">
           <div className="form-group">
             <label>From Location</label>
-            <div className="location-select">
-              <FaStore className="location-icon" />
-              <select
-                name="fromLocation"
-                value={transferData.fromLocation}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              >
-                <option value="">Select Store</option>
-                {stores.map(store => (
-                  <option key={store.id} value={store.name}>{store.name}</option>
-                ))}
-              </select>
-            </div>
+            <select
+              name="fromLocation"
+              value={formData.fromLocation}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            >
+              <option value="">Select Store</option>
+              {stores.map(store => (
+                <option key={store.id} value={store.id}>
+                  {store.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
             <label>To Location</label>
-            <div className="location-select">
-              <FaStore className="location-icon" />
-              <select
-                name="toLocation"
-                value={transferData.toLocation}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              >
-                <option value="">Select Shop</option>
-                {shops.map(shop => (
-                  <option key={shop.id} value={shop.name}>{shop.name}</option>
-                ))}
-              </select>
-            </div>
+            <select
+              name="toLocation"
+              value={formData.toLocation}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            >
+              <option value="">Select Shop</option>
+              {shops.map(shop => (
+                <option key={shop.id} value={shop.id}>
+                  {shop.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -449,7 +331,7 @@ const handleAddProduct = async () => {
             <input
               type="date"
               name="transferDate"
-              value={transferData.transferDate}
+              value={formData.transferDate}
               onChange={handleChange}
               required
               disabled={isLoading}
@@ -457,41 +339,159 @@ const handleAddProduct = async () => {
           </div>
         </div>
 
+        <div className="form-group">
+          <label>Notes</label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows="3"
+            disabled={isLoading}
+            placeholder="Optional notes about this transfer"
+          />
+        </div>
+
+        <div className="product-selection">
+          <h3>{isEditMode ? 'Edit Products' : 'Add Products'}</h3>
+          {!isEditMode && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Product</label>
+                <select
+                  name="product"
+                  value={currentProduct.product}
+                  onChange={(e) => setCurrentProduct({...currentProduct, product: e.target.value})}
+                  disabled={isLoading}
+                >
+                  <option value="">Select Product</option>
+                  {products.map(product => (
+                    <option key={product._id} value={product._id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Packs</label>
+                <input
+                  type="number"
+                  name="packs"
+                  value={currentProduct.packs}
+                  onChange={(e) => setCurrentProduct({...currentProduct, packs: e.target.value})}
+                  min="0"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Pieces</label>
+                <input
+                  type="number"
+                  name="pieces"
+                  value={currentProduct.pieces}
+                  onChange={(e) => setCurrentProduct({...currentProduct, pieces: e.target.value})}
+                  min="0"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <button 
+                type="button" 
+                className="add-product-btn"
+                onClick={handleAddProduct}
+                disabled={isLoading || !currentProduct.product || (!currentProduct.packs && !currentProduct.pieces)}
+              >
+                Add Product
+              </button>
+            </div>
+          )}
+        </div>
+
+        {formData.products.length > 0 && (
+          <div className="product-list">
+            <h4>Products to Transfer</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Packs</th>
+                  <th>Pieces</th>
+                  <th>Total Pieces</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {formData.products.map((item, index) => {
+                  const totalPieces = calculateTotalPieces(item);
+                  return (
+                    <tr key={index}>
+                      <td>{item.productName}</td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.packs}
+                          onChange={(e) => handleUpdateProduct(index, 'packs', e.target.value)}
+                          disabled={isLoading}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.pieces}
+                          onChange={(e) => handleUpdateProduct(index, 'pieces', e.target.value)}
+                          disabled={isLoading}
+                        />
+                      </td>
+                      <td>{totalPieces}</td>
+                      <td>
+                        {!isEditMode && (
+                          <button 
+                            type="button" 
+                            className="remove-btn"
+                            onClick={() => handleRemoveProduct(index)}
+                            disabled={isLoading}
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <div className="form-actions">
           <button 
             type="submit" 
-            className="submit-button"
-            disabled={isLoading}
+            className="submit-btn"
+            disabled={isLoading || formData.products.length === 0}
           >
             {isLoading ? (
-              <span>Processing...</span>
+              <span>Processing Transfer...</span>
             ) : (
               <>
                 <FaExchangeAlt /> {isEditMode ? 'Update Transfer' : 'Process Transfer'}
               </>
             )}
           </button>
-
-          {isEditMode && (
-            <button
-              type="button"
-              className="cancel-button"
-              onClick={() => navigate('/dashboard/transfers/records')}
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-          )}
         </div>
       </form>
 
-      {!isEditMode && (
-        <div className="transfer-actions">
-          <Link to="/dashboard/transfers/records" className="view-records-button">
-            <FaHistory /> View Transfer Records
-          </Link>
-        </div>
-      )}
+      <div className="transfer-actions">
+        <button
+          type="button"
+          className="view-transfers-btn"
+          onClick={() => navigate('/owner/dashboard/transfers/records')}
+        >
+          <FaHistory /> View Transfer History
+        </button>
+      </div>
     </div>
   );
 };

@@ -21,7 +21,7 @@ const NewBatchEntry = () => {
       piecesPerPack: 1 
     }]
   });
-
+  const [systemSettings, setSystemSettings] = useState({ vatRate: 0, currency: '' });
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
   const [vatRate, setVatRate] = useState(0.15);
@@ -34,13 +34,17 @@ const NewBatchEntry = () => {
 useEffect(() => {
   const fetchData = async () => {
     try {
-      const [productsRes, suppliersRes] = await Promise.all([
+      const [productsRes, suppliersRes, settingsRes] = await Promise.all([
         axios.get('http://localhost:5000/api/products'),
-        axios.get('http://localhost:5000/api/suppliers')
+        axios.get('http://localhost:5000/api/suppliers'),
+        axios.get('http://localhost:5000/api/settings')
       ]);
       
       setProducts(productsRes.data?.data || []);
       setSuppliers(suppliersRes.data?.data || []);
+      if (settingsRes.data?.success) {
+          setSystemSettings(settingsRes.data.data);
+      }
       
       if (invoiceId) {
         try {
@@ -129,8 +133,10 @@ const validateForm = () => {
   };
 
    // Calculate item totals and invoice totals
-   const calculateTotals = () => {
-  const itemsWithTotals = formData.items.map(item => {
+  const calculateTotals = () => {
+    const vatRate = systemSettings.vatRate; 
+
+    const itemsWithTotals = formData.items.map(item => {
     const isPack = item.unitMode === 'pack';
     const quantityInPieces = isPack 
       ? item.quantityBought * (item.piecesPerPack || 1)
@@ -157,9 +163,6 @@ const validateForm = () => {
 
   return { itemsWithTotals, subtotal, vatAmount, total };
 };
-
-
-
 
   const { itemsWithTotals, subtotal, vatAmount, total } = calculateTotals();
 
@@ -468,16 +471,12 @@ const handleSubmit = async (e) => {
                   )}
                 </div>
                 <div className="item-totals">
-                  <span>
-                    {itemsWithTotals[index].displayQuantity} {itemsWithTotals[index].displayUnit}(s) × 
-                    {item.unitMode === 'pack' ? 
-                      `${item.buyPrice} × ${item.piecesPerPack} pieces` : 
-                      item.buyPrice}
-                  </span>
-                  <span>Item Total: {itemsWithTotals[index]?.itemTotal?.toFixed(2)}</span>
-                  <span>With VAT: {itemsWithTotals[index]?.itemTotalWithVat?.toFixed(2)}</span>
-                </div>
-              </div>
+              {/* ... */}
+              {/* --- MODIFIED: Display fetched currency --- */}
+              <span>Item Total: {systemSettings.currency} {itemsWithTotals[index]?.itemTotal?.toFixed(2)}</span>
+              <span>With VAT: {systemSettings.currency} {itemsWithTotals[index]?.itemTotalWithVat?.toFixed(2)}</span>
+            </div>
+          </div>
             ))}
 
             <button
@@ -491,15 +490,14 @@ const handleSubmit = async (e) => {
             <div className="invoice-totals">
               <div className="total-row">
                 <span>Subtotal:</span>
-                <span>{subtotal.toFixed(2)}</span>
-              </div>
+                <span>{systemSettings.currency} {subtotal.toFixed(2)}</span>              </div>
               <div className="total-row">
-                <span>VAT ({vatRate * 100}%):</span>
+                <span>VAT ({(systemSettings.vatRate * 100).toFixed(0)}%):</span>
                 <span>{vatAmount.toFixed(2)}</span>
               </div>
               <div className="total-row grand-total">
                 <span>Total:</span>
-                <span>{total.toFixed(2)}</span>
+                <span>{systemSettings.currency} {total.toFixed(2)}</span>
               </div>
             </div>
             <div className="form-actions">
@@ -520,7 +518,7 @@ const handleSubmit = async (e) => {
             <button
               type="button"
               className="view-invoices-btn"
-              onClick={() => navigate('/invoices')}
+              onClick={() => navigate('/owner/dashboard/invoices')}
             >
               📄 View Invoices
             </button>

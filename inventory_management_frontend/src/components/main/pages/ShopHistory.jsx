@@ -1,37 +1,39 @@
 import { useEffect, useState } from 'react';
-import { FaBoxOpen, FaExchangeAlt, FaHistory, FaUser, FaWarehouse } from 'react-icons/fa';
+import { FaBoxOpen, FaHistory, FaShoppingCart, FaStore, FaUser } from 'react-icons/fa';
 import { Link, useParams } from 'react-router-dom';
 import api from '../../../api';
-import './StoreHistory.css';
+import './ShopHistory.css';
 
-const StoreHistory = () => {
-  const { id: storeId } = useParams();
+const ShopHistory = () => {
+  const { id: shopId } = useParams();
   const [history, setHistory] = useState([]);
-  const [store, setStore] = useState(null);
+  const [shop, setShop] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!shopId) return;
+      
       try {
         setIsLoading(true);
         setError(null);
         
-        // Fetch store details and history
-        const [storeResponse, historyResponse] = await Promise.all([
-          api.get(`/stores/${storeId}`),
-          api.get(`/inventory/store-history/${storeId}`)
+        // Fetch shop details and history in parallel
+        const [shopResponse, historyResponse] = await Promise.all([
+          api.get(`/shops/${shopId}`),
+          api.get(`/inventory/shop-history/${shopId}`)
         ]);
 
-        // Set store details
-        setStore(storeResponse.data.data || storeResponse.data);
+        // Set shop details
+        setShop(shopResponse.data.data || shopResponse.data);
 
-        // Process history data - SIMPLIFIED AND FIXED
+        // Process history data
         const historyData = historyResponse.data.data || historyResponse.data || [];
         
         const processedHistory = historyData.map(activity => {
-          // Calculate total pieces
+          // Calculate total pieces properly
           const packSize = activity.packSize || 1;
           const packs = activity.packs || 0;
           const pieces = activity.pieces || 0;
@@ -40,41 +42,17 @@ const StoreHistory = () => {
           // Format quantity display
           let displayQuantity = '';
           if (packSize > 1) {
-            if (packs > 0 && pieces > 0) {
-              displayQuantity = `${packs} pack${packs !== 1 ? 's' : ''} × ${packSize} + ${pieces} piece${pieces !== 1 ? 's' : ''} = ${totalPieces} pieces`;
-            } else if (packs > 0) {
-              displayQuantity = `${packs} pack${packs !== 1 ? 's' : ''} × ${packSize} = ${totalPieces} pieces`;
-            } else {
-              displayQuantity = `${pieces} piece${pieces !== 1 ? 's' : ''}`;
-            }
+            displayQuantity = `${packs} pack${packs !== 1 ? 's' : ''} × ${packSize} + ${pieces} piece${pieces !== 1 ? 's' : ''} = ${totalPieces} pieces`;
           } else {
             displayQuantity = `${totalPieces} piece${totalPieces !== 1 ? 's' : ''}`;
           }
 
-          // FIXED: Get location name properly
+          // Get proper location names
           let locationName = 'Unknown Location';
-          if (activity.type === 'transfer') {
-            // Check all possible ways destination might be stored
-            if (activity.destination?.name) {
-              locationName = activity.destination.name;
-            } else if (activity.toLocation?.name) {
-              locationName = activity.toLocation.name;
-            } else if (activity.destination) {
-              // If it's just an ID, show the ID
-              locationName = `Shop ${activity.destination.toString().slice(-6)}`;
-            } else if (activity.toLocation) {
-              locationName = `Shop ${activity.toLocation.toString().slice(-6)}`;
-            } else if (activity.description?.includes('to shop')) {
-              // Try to extract from description as fallback
-              const shopMatch = activity.description.match(/to shop (\w+)/i);
-              locationName = shopMatch ? `Shop ${shopMatch[1]}` : 'Unknown Shop';
-            }
-          } else if (activity.type === 'receipt') {
-            if (activity.source?.name) {
-              locationName = activity.source.name;
-            } else if (activity.source) {
-              locationName = `Store ${activity.source.toString().slice(-6)}`;
-            }
+          if (activity.type === 'receipt' && activity.source) {
+            locationName = activity.source.name || `Store ${activity.source._id?.slice(-6)}`;
+          } else if (activity.type === 'sale') {
+            locationName = 'Customer Sale';
           }
 
           return {
@@ -100,13 +78,13 @@ const StoreHistory = () => {
       }
     };
 
-    if (storeId) fetchData();
-  }, [storeId]);
+    fetchData();
+  }, [shopId]);
 
   const filteredHistory = history.filter(activity => {
     switch (filter) {
-      case 'transfers': return activity.type === 'transfer';
       case 'receipts': return activity.type === 'receipt';
+      case 'sales': return activity.type === 'sale';
       case 'adjustments': return activity.type === 'adjustment';
       default: return true;
     }
@@ -114,8 +92,8 @@ const StoreHistory = () => {
 
   const getActivityTitle = (activity) => {
     switch (activity.type) {
-      case 'transfer': return 'Transfer to Shop';
-      case 'receipt': return 'Stock Receipt';
+      case 'receipt': return 'Receipt from Store';
+      case 'sale': return 'Sale to Customer';
       case 'adjustment': return 'Stock Adjustment';
       default: return 'Inventory Activity';
     }
@@ -123,8 +101,8 @@ const StoreHistory = () => {
 
   const getActivityIcon = (type) => {
     switch (type) {
-      case 'transfer': return <FaExchangeAlt className="transfer-icon" />;
       case 'receipt': return <FaBoxOpen className="receipt-icon" />;
+      case 'sale': return <FaShoppingCart className="sale-icon" />;
       default: return <FaHistory className="default-icon" />;
     }
   };
@@ -133,22 +111,22 @@ const StoreHistory = () => {
   if (error) return <div className="error-message">Error: {error}</div>;
 
   return (
-    <div className="store-history-container">
+    <div className="shop-history-container">
       <div className="history-header">
         <div className="header-top">
-          <Link to="/owner/dashboard/inventory" className="back-button">
+          <Link to="/owner/dashboard/overview" className="back-button">
             ← Back to Inventory
           </Link>
           <h1>
-            <FaWarehouse className="header-icon" />
-            {store?.name || 'Store'} Inventory History
+            <FaStore className="header-icon" />
+            {shop?.name || 'Shop'} Inventory History
           </h1>
         </div>
         
-        {store && (
-          <div className="store-info">
-            <span className="store-name">{store.name}</span>
-            {store.location && <span className="store-location">{store.location}</span>}
+        {shop && (
+          <div className="shop-info">
+            <span className="shop-name">{shop.name}</span>
+            {shop.location && <span className="shop-location">{shop.location}</span>}
           </div>
         )}
         
@@ -156,11 +134,11 @@ const StoreHistory = () => {
           <button className={`filter-button ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
             All Activities ({history.length})
           </button>
-          <button className={`filter-button ${filter === 'transfers' ? 'active' : ''}`} onClick={() => setFilter('transfers')}>
-            <FaExchangeAlt /> Transfers ({history.filter(a => a.type === 'transfer').length})
-          </button>
           <button className={`filter-button ${filter === 'receipts' ? 'active' : ''}`} onClick={() => setFilter('receipts')}>
             <FaBoxOpen /> Receipts ({history.filter(a => a.type === 'receipt').length})
+          </button>
+          <button className={`filter-button ${filter === 'sales' ? 'active' : ''}`} onClick={() => setFilter('sales')}>
+            <FaShoppingCart /> Sales ({history.filter(a => a.type === 'sale').length})
           </button>
         </div>
       </div>
@@ -208,7 +186,7 @@ const StoreHistory = () => {
 
                   <div className="detail-row">
                     <span className="detail-label">
-                      {activity.type === 'transfer' ? 'To:' : 'From:'}
+                      {activity.type === 'receipt' ? 'From:' : 'To:'}
                     </span>
                     <span className="detail-value">{activity.locationName}</span>
                   </div>
@@ -224,7 +202,7 @@ const StoreHistory = () => {
                   {activity.description && (
                     <div className="detail-row">
                       <span className="detail-label">Notes:</span>
-                      <span className="detail-value notes-text">{activity.description}</span>
+                      <span className="detail-value">{activity.description}</span>
                     </div>
                   )}
                 </div>
@@ -237,8 +215,8 @@ const StoreHistory = () => {
             <h3>No activities found</h3>
             <p>
               {filter === 'all' 
-                ? 'This store has no recorded inventory activities yet.'
-                : `No ${filter} activities found for this store.`}
+                ? 'This shop has no recorded inventory activities yet.'
+                : `No ${filter} activities found for this shop.`}
             </p>
           </div>
         )}
@@ -247,4 +225,4 @@ const StoreHistory = () => {
   );
 };
 
-export default StoreHistory;
+export default ShopHistory;

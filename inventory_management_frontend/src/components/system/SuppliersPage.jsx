@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { FaEdit, FaPlus, FaSpinner, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaPlus, FaSpinner, FaTrash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import './SuppliersPage.css';
 
 const SuppliersPage = () => {
+   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
@@ -108,8 +110,16 @@ const SuppliersPage = () => {
 
   return (
     <div className="dashboard-page">
-      <h1 className="page-title">Manage Suppliers</h1>
-
+      <div className="page-header">
+        
+        <h1 className="page-title">Manage Suppliers</h1>
+        <button 
+          onClick={() => navigate(-1)} 
+          className="back-button"
+        >
+          <FaArrowLeft /> Back
+        </button>
+      </div>
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 

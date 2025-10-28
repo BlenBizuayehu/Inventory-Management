@@ -125,7 +125,7 @@ const calculateItemTotals = (item) => {
         <h1 className="page-title">
           <FaFileInvoice /> Invoices
         </h1>
-        <Link to="/invoices/new" className="new-invoice-btn">
+        <Link to="/owner/dashboard/invoices/new" className="new-invoice-btn">
           Create New Invoice
         </Link>
       </div>
@@ -221,7 +221,7 @@ const calculateItemTotals = (item) => {
                           </div>
                           <div className="invoice-actions">
                             <Link 
-                              to={`/invoices/edit/${invoice._id}`} 
+                              to={`/owner/dashboard/invoices/edit/${invoice._id}`} 
                               className="edit-btn"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -236,7 +236,7 @@ const calculateItemTotals = (item) => {
                               <button
                                 type="button"
                                 className="batch-placement-btn"
-                                onClick={() => navigate(`/batch-placement/${invoice._id}`, { 
+                                onClick={() => navigate(`/owner/dashboard/batch-placement/${invoice._id}`, { 
                                   state: { invoice } 
                                 })}
                               >

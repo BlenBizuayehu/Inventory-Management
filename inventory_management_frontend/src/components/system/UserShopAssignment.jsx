@@ -1,8 +1,8 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FaEdit, FaPlus, FaStore, FaTrash, FaUser, FaUserShield, FaUserTie } from 'react-icons/fa';
+import { FaPlus, FaStore, FaTrash, FaUser, FaUserShield, FaUserTie } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api'; // Using your centralized api instance
 import './UserShopAssignment.css';
 
 const UserShopAssignmentPage = () => {
@@ -15,139 +15,133 @@ const UserShopAssignmentPage = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
 
-  // Watch shop selection to filter assignments
   const selectedShopId = watch("shopId");
 
-  // Fetch initial data with your authentication mechanism
+  // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        setError('');
+        setError(null);
         
-        // Fetch current user and all users in parallel
         const [currentUserRes, usersRes, shopsRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/users/me', { 
-            headers: { Authorization: `Bearer ${token}` } 
-          }),
-          axios.get('http://localhost:5000/api/users', { 
-            headers: { Authorization: `Bearer ${token}` } 
-          }),
-          axios.get('http://localhost:5000/api/shops', {
-            headers: { Authorization: `Bearer ${token}` }
-          })
+          api.get('/users/me'),
+          api.get('/users'),
+          api.get('/shops')
         ]);
         
-        // Validate responses
-        if (!currentUserRes.data?.data || !usersRes.data?.data || !shopsRes.data?.data) {
-          throw new Error('Invalid response structure');
-        }
-        
+        // Handle response structure variations
         setCurrentUser(currentUserRes.data?.data || currentUserRes.data);
-        
-        // Set users with proper fallback
-        setUsers(
-          Array.isArray(usersRes.data?.data) ? usersRes.data.data : 
-          Array.isArray(usersRes.data) ? usersRes.data : []
-        );
-        
-        // Set shops
+        setUsers(usersRes.data?.data || usersRes.data || []);
         setShops(shopsRes.data?.data || shopsRes.data || []);
 
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load user data');
-        if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
+        handleApiError(err, 'Failed to load initial data');
       } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [token, navigate]);
+  }, []);
 
   // Fetch assignments when shop selection changes
   useEffect(() => {
-    if (selectedShopId) {
-      const fetchAssignments = async () => {
-        try {
-          const res = await axios.get(`http://localhost:5000/api/user-shops/shop/${selectedShopId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          setAssignments(res.data.data);
-        } catch (err) {
-          setError('Failed to fetch assignments');
-          if (err.response?.status === 401) {
-            localStorage.removeItem('token');
-            navigate('/login');
-          }
-        }
-      };
-      fetchAssignments();
-    } else {
+    if (!selectedShopId) {
       setAssignments([]);
+      return;
     }
-  }, [selectedShopId, token, navigate]);
 
-  // Handle form submission
-  const onSubmit = async (data) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.post('/api/user-shops', data, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Add the new assignment to the list
-      const newAssignment = res.data.data;
-      setAssignments(prev => [...prev, newAssignment]);
-      
-      setSuccess('User assigned successfully');
-      reset({ shopId: data.shopId }); // Keep shop selected but reset user
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to assign user');
-      if (err.response?.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/login');
+    const fetchAssignments = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/user-shops/shop/${selectedShopId}`);
+        setAssignments(res.data?.data || res.data || []);
+      } catch (err) {
+        handleApiError(err, 'Failed to fetch assignments');
+      } finally {
+        setLoading(false);
       }
+    };
+    
+    fetchAssignments();
+  }, [selectedShopId]);
+
+  const handleApiError = (err, defaultMessage) => {
+    console.error('API Error:', err);
+    const errorMessage = err.response?.data?.error || defaultMessage;
+    setError(errorMessage);
+    
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      navigate('/login');
+    }
+  };
+
+  const showSuccess = (message) => {
+    setSuccess(message);
+    setTimeout(() => setSuccess(null), 3000);
+  };
+
+  const onSubmit = async (data) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const res = await api.post('/user-shops', data);
+      const newAssignment = res.data?.data || res.data;
+      
+      setAssignments(prev => [...prev, newAssignment]);
+      showSuccess('User assigned successfully');
+      reset({ shopId: data.shopId, role: 'staff' });
+      
+    } catch (err) {
+      handleApiError(err, 'Failed to assign user');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle assignment removal
   const handleRemove = async (assignmentId) => {
-    if (window.confirm('Are you sure you want to remove this assignment?')) {
-      try {
-        await axios.delete(`/api/user-shops/${assignmentId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setAssignments(prev => prev.filter(a => a._id !== assignmentId));
-        setSuccess('Assignment removed successfully');
-      } catch (err) {
-        setError(err.response?.data?.error || 'Failed to remove assignment');
-        if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
-      }
+    if (!window.confirm('Are you sure you want to remove this assignment?')) return;
+    
+    try {
+      await api.delete(`/user-shops/${assignmentId}`);
+      setAssignments(prev => prev.filter(a => a._id !== assignmentId));
+      showSuccess('Assignment removed successfully');
+    } catch (err) {
+      handleApiError(err, 'Failed to remove assignment');
     }
   };
 
-  // Get filtered users (users not already assigned to selected shop)
   const getAvailableUsers = () => {
-    if (!selectedShopId) return users;
-    const assignedUserIds = assignments.map(a => a.user._id);
-    return users.filter(user => !assignedUserIds.includes(user._id));
+    if (!selectedShopId || !users.length) return [];
+    
+    const assignedUserIds = assignments.map(a => 
+      a.user?._id || a.user // Handle both populated and unpopulated user references
+    );
+    
+    return users.filter(user => 
+      !assignedUserIds.includes(user._id) && 
+      user.role !== 'owner' // Typically owners shouldn't be assigned to shops
+    );
   };
 
-  // Get current shop name
   const currentShop = shops.find(shop => shop._id === selectedShopId);
+  const availableUsers = getAvailableUsers();
+
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'manager': return <FaUserTie className="manager-icon" />;
+      case 'cashier': return <FaUserShield className="cashier-icon" />;
+      default: return <FaUser className="staff-icon" />;
+    }
+  };
+
+  if (loading && !assignments.length) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <div className="user-shop-assignment-page">
@@ -156,14 +150,22 @@ const UserShopAssignmentPage = () => {
           <FaStore /> Shop Staff Management
           {currentUser && (
             <span className="current-user">
-              Logged in as: {currentUser.name} ({currentUser.role})
+              Logged in as: {currentUser.username} ({currentUser.role})
             </span>
           )}
         </h2>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {error && (
+        <div className="alert alert-error" onClick={() => setError(null)}>
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success">
+          {success}
+        </div>
+      )}
 
       <div className="assignment-container">
         {/* Assignment Form */}
@@ -176,32 +178,38 @@ const UserShopAssignmentPage = () => {
                 {...register("shopId", { required: "Shop is required" })}
                 disabled={loading}
               >
-                <option value="">Select Shop</option>
+                <option value="">Select a shop...</option>
                 {shops.map(shop => (
                   <option key={shop._id} value={shop._id}>
                     {shop.name} ({shop.location})
                   </option>
                 ))}
               </select>
-              {errors.shopId && <span className="error">{errors.shopId.message}</span>}
+              {errors.shopId && (
+                <span className="error">{errors.shopId.message}</span>
+              )}
             </div>
 
             <div className="form-group">
               <label>User</label>
               <select
                 {...register("userId", { required: "User is required" })}
-                disabled={loading || !selectedShopId}
+                disabled={loading || !selectedShopId || !availableUsers.length}
               >
-                <option value="">Select User</option>
-                {getAvailableUsers().map(user => (
+                <option value="">Select user...</option>
+                {availableUsers.map(user => (
                   <option key={user._id} value={user._id}>
-                    {user.name} ({user.email})
+                    {user.username} ({user.email})
                   </option>
                 ))}
               </select>
-              {errors.userId && <span className="error">{errors.userId.message}</span>}
-              {selectedShopId && getAvailableUsers().length === 0 && (
-                <div className="info-message">All available users are already assigned to this shop</div>
+              {errors.userId && (
+                <span className="error">{errors.userId.message}</span>
+              )}
+              {selectedShopId && !availableUsers.length && (
+                <div className="info-message">
+                  All available users are assigned to this shop
+                </div>
               )}
             </div>
 
@@ -209,8 +217,8 @@ const UserShopAssignmentPage = () => {
               <label>Role</label>
               <select
                 {...register("role")}
-                disabled={loading || !selectedShopId}
                 defaultValue="staff"
+                disabled={loading || !selectedShopId}
               >
                 <option value="manager">Manager</option>
                 <option value="staff">Staff</option>
@@ -218,9 +226,10 @@ const UserShopAssignmentPage = () => {
               </select>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={loading || !selectedShopId || getAvailableUsers().length === 0}
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading || !selectedShopId || !availableUsers.length}
             >
               <FaPlus /> {loading ? 'Assigning...' : 'Assign User'}
             </button>
@@ -230,53 +239,57 @@ const UserShopAssignmentPage = () => {
         {/* Assignments List */}
         <div className="assignments-list">
           <h3>
-            {currentShop ? `${currentShop.name} Staff` : 'Select a shop to view assignments'}
+            {currentShop 
+              ? `${currentShop.name} Staff (${assignments.length})` 
+              : 'Select a shop to view assignments'}
           </h3>
           
-          {loading && !selectedShopId ? (
-            <div>Loading...</div>
-          ) : !selectedShopId ? (
-            <div className="no-shop-selected">
+          {!selectedShopId ? (
+            <div className="empty-state">
               Please select a shop to view and manage assignments
             </div>
           ) : assignments.length === 0 ? (
-            <div className="no-assignments">
+            <div className="empty-state">
               No users currently assigned to this shop
             </div>
           ) : (
-            <ul>
-              {assignments.map(assignment => (
-                <li key={assignment._id} className="assignment-item">
-                  <div className="user-info">
-                    <div className="user-avatar">
-                      {assignment.role === 'manager' && <FaUserTie />}
-                      {assignment.role === 'staff' && <FaUser />}
-                      {assignment.role === 'cashier' && <FaUserShield />}
+            <ul className="assignments-grid">
+              {assignments.map(assignment => {
+                const user = assignment.user?._id ? assignment.user : 
+                  users.find(u => u._id === assignment.user) || {};
+                const role = assignment.role || 'staff';
+                
+                return (
+                  <li key={assignment._id} className="assignment-card">
+                    <div className="user-info">
+                      <div className={`user-avatar role-${role}`}>
+                        {getRoleIcon(role)}
+                      </div>
+                      <div>
+                        <h4>{user.username || 'Unknown User'}</h4>
+                        <p>{user.email || 'No email'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4>{assignment.user.name}</h4>
-                      <p>{assignment.user.email}</p>
+                    
+                    <div className="assignment-meta">
+                      <span className={`role-badge role-${role}`}>
+                        {role}
+                      </span>
+                      
+                      <div className="assignment-actions">
+                        
+                        <button
+                          className="btn-icon delete-btn"
+                          title="Remove assignment"
+                          onClick={() => handleRemove(assignment._id)}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="assignment-details">
-                    <span className={`role-badge ${assignment.role}`}>
-                      {assignment.role}
-                    </span>
-                    <div className="assignment-actions">
-                      <button className="edit-btn">
-                        <FaEdit />
-                      </button>
-                      <button 
-                        className="delete-btn"
-                        onClick={() => handleRemove(assignment._id)}
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

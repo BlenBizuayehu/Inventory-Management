@@ -18,7 +18,7 @@ const StoreHistory = () => {
         setIsLoading(true);
         setError(null);
         
-        // Fetch store details and history
+        // Fetch store details and history in parallel
         const [storeResponse, historyResponse] = await Promise.all([
           api.get(`/stores/${storeId}`),
           api.get(`/inventory/store-history/${storeId}`)
@@ -27,11 +27,11 @@ const StoreHistory = () => {
         // Set store details
         setStore(storeResponse.data.data || storeResponse.data);
 
-        // Process history data - SIMPLIFIED AND FIXED
+        // Process history data
         const historyData = historyResponse.data.data || historyResponse.data || [];
         
-        const processedHistory = historyData.map(activity => {
-          // Calculate total pieces
+        const processedHistory = await Promise.all(historyData.map(async (activity) => {
+          // Calculate total pieces properly
           const packSize = activity.packSize || 1;
           const packs = activity.packs || 0;
           const pieces = activity.pieces || 0;
@@ -40,40 +40,42 @@ const StoreHistory = () => {
           // Format quantity display
           let displayQuantity = '';
           if (packSize > 1) {
-            if (packs > 0 && pieces > 0) {
-              displayQuantity = `${packs} pack${packs !== 1 ? 's' : ''} × ${packSize} + ${pieces} piece${pieces !== 1 ? 's' : ''} = ${totalPieces} pieces`;
-            } else if (packs > 0) {
-              displayQuantity = `${packs} pack${packs !== 1 ? 's' : ''} × ${packSize} = ${totalPieces} pieces`;
-            } else {
-              displayQuantity = `${pieces} piece${pieces !== 1 ? 's' : ''}`;
-            }
+            displayQuantity = `${packs} pack${packs !== 1 ? 's' : ''} × ${packSize} + ${pieces} piece${pieces !== 1 ? 's' : ''} = ${totalPieces} pieces`;
           } else {
             displayQuantity = `${totalPieces} piece${totalPieces !== 1 ? 's' : ''}`;
           }
 
-          // FIXED: Get location name properly
+          // Get proper location names - FIXED
           let locationName = 'Unknown Location';
+          let locationId = null;
+
           if (activity.type === 'transfer') {
-            // Check all possible ways destination might be stored
-            if (activity.destination?.name) {
+            // Handle different ways destination might be stored
+            if (activity.destination && activity.destination.name) {
               locationName = activity.destination.name;
-            } else if (activity.toLocation?.name) {
+              locationId = activity.destination._id;
+            } else if (activity.toLocation && activity.toLocation.name) {
               locationName = activity.toLocation.name;
+              locationId = activity.toLocation._id;
             } else if (activity.destination) {
-              // If it's just an ID, show the ID
-              locationName = `Shop ${activity.destination.toString().slice(-6)}`;
+              // If we only have an ID, try to fetch the shop name
+              try {
+                const shopResponse = await api.get(`/shops/${activity.destination}`);
+                locationName = shopResponse.data.data?.name || shopResponse.data?.name || `Shop ${activity.destination.slice(-6)}`;
+                locationId = activity.destination;
+              } catch (err) {
+                locationName = `Shop ${activity.destination.slice(-6)}`;
+                locationId = activity.destination;
+              }
             } else if (activity.toLocation) {
-              locationName = `Shop ${activity.toLocation.toString().slice(-6)}`;
-            } else if (activity.description?.includes('to shop')) {
-              // Try to extract from description as fallback
-              const shopMatch = activity.description.match(/to shop (\w+)/i);
-              locationName = shopMatch ? `Shop ${shopMatch[1]}` : 'Unknown Shop';
+              locationName = `Shop ${activity.toLocation.slice(-6)}`;
+              locationId = activity.toLocation;
             }
           } else if (activity.type === 'receipt') {
-            if (activity.source?.name) {
+            if (activity.source && activity.source.name) {
               locationName = activity.source.name;
             } else if (activity.source) {
-              locationName = `Store ${activity.source.toString().slice(-6)}`;
+              locationName = `Source ${activity.source.slice(-6)}`;
             }
           }
 
@@ -85,11 +87,12 @@ const StoreHistory = () => {
             totalPieces,
             displayQuantity,
             locationName,
+            locationId,
             product: activity.product || { name: 'Unknown Product', sku: 'N/A' },
             batchNumber: activity.batchNumber || activity.batch || 'N/A',
             user: activity.user || { name: 'System' }
           };
-        });
+        }));
 
         setHistory(processedHistory);
       } catch (err) {
@@ -129,6 +132,24 @@ const StoreHistory = () => {
     }
   };
 
+  // Format the location display properly
+  const formatLocationDisplay = (activity) => {
+    if (activity.type === 'transfer') {
+      if (activity.locationName && activity.locationName !== 'Unknown Location') {
+        return activity.locationName;
+      } else if (activity.locationId) {
+        return `Shop ${activity.locationId.slice(-6)}`;
+      } else if (activity.destination) {
+        return `Shop ${activity.destination.slice(-6)}`;
+      } else if (activity.toLocation) {
+        return `Shop ${activity.toLocation.slice(-6)}`;
+      }
+      return 'Unknown Shop';
+    } else {
+      return activity.locationName || 'Unknown Source';
+    }
+  };
+
   if (isLoading) return <div className="loading">Loading history...</div>;
   if (error) return <div className="error-message">Error: {error}</div>;
 
@@ -136,7 +157,7 @@ const StoreHistory = () => {
     <div className="store-history-container">
       <div className="history-header">
         <div className="header-top">
-          <Link to="/owner/dashboard/inventory" className="back-button">
+          <Link to="/owner/dashboard/overview" className="back-button">
             ← Back to Inventory
           </Link>
           <h1>
@@ -210,7 +231,7 @@ const StoreHistory = () => {
                     <span className="detail-label">
                       {activity.type === 'transfer' ? 'To:' : 'From:'}
                     </span>
-                    <span className="detail-value">{activity.locationName}</span>
+                    <span className="detail-value">{formatLocationDisplay(activity)}</span>
                   </div>
 
                   <div className="detail-row">
