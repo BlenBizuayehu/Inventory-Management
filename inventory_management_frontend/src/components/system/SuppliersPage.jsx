@@ -1,7 +1,7 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { FaArrowLeft, FaEdit, FaPlus, FaSpinner, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api';
 import './SuppliersPage.css';
 
 const SuppliersPage = () => {
@@ -28,7 +28,7 @@ const SuppliersPage = () => {
   const fetchSuppliers = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/suppliers');
+      const response = await api.get('/suppliers');
       setSuppliers(response.data.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch suppliers');
@@ -49,10 +49,10 @@ const SuppliersPage = () => {
 
     try {
       if (isEditing) {
-        await axios.put(`http://localhost:5000/api/suppliers/${currentId}`, formData);
+        await api.put(`/suppliers/${currentId}`, formData);
         setSuccess('Supplier updated successfully');
       } else {
-        await axios.post('http://localhost:5000/api/suppliers', formData);
+        await api.post('/suppliers', formData);
         setSuccess('Supplier added successfully');
       }
 
@@ -84,8 +84,9 @@ const SuppliersPage = () => {
     
     setIsLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/api/suppliers/${id}`);
+      await api.delete(`/suppliers/${id}`);
       setSuccess('Supplier deleted successfully');
+
       fetchSuppliers();
     } catch (err) {
       setError(err.response?.data?.message || 'Delete failed');
