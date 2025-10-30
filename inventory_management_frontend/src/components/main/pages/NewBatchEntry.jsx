@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom'; // Add this at the top
+import api from '../../../api';
 
 import { FaMinus, FaPlus, FaSave, FaSpinner, FaTrash } from 'react-icons/fa';
 import './NewBatchEntry.css';
@@ -35,10 +35,11 @@ useEffect(() => {
   const fetchData = async () => {
     try {
       const [productsRes, suppliersRes, settingsRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/products'),
-        axios.get('http://localhost:5000/api/suppliers'),
-        axios.get('http://localhost:5000/api/settings')
+        api.get('/products'),
+        api.get('/suppliers'),
+        api.get('/settings')
       ]);
+
       
       setProducts(productsRes.data?.data || []);
       setSuppliers(suppliersRes.data?.data || []);
@@ -48,7 +49,7 @@ useEffect(() => {
       
       if (invoiceId) {
         try {
-          const invoiceRes = await axios.get(`http://localhost:5000/api/invoices/${invoiceId}`);
+          const invoiceRes = await api.get(`/invoices/${invoiceId}`);
           const invoice = invoiceRes.data?.data;
           
           if (invoice) {
@@ -248,18 +249,12 @@ const handleSubmit = async (e) => {
           : parseInt(item.quantityBought)
       }))
     };
-    const apiUrl = isEditMode 
-      ? `http://localhost:5000/api/invoices/${invoiceId}`
-      : 'http://localhost:5000/api/invoices';
+    const response = await api({
+  method: isEditMode ? 'put' : 'post',
+  url: isEditMode ? `/invoices/${invoiceId}` : '/invoices',
+  data: invoiceData
+});
 
-    const response = await axios({
-      method: isEditMode ? 'put' : 'post',
-      url: apiUrl,
-      data: invoiceData,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
 
     if (!response.data.success) {
       throw new Error(response.data.message || 'Operation failed');
