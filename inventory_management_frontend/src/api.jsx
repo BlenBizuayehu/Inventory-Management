@@ -1,16 +1,22 @@
 // src/api.js
-import axios from 'axios';
+import axios from "axios";
 
+// Environment-aware base URL
+const dev = "http://localhost:5000/api";
+const prod = "https://inventory-management-yaij.onrender.com/api";
+export const API_BASE_URL = process.env.NODE_ENV === "production" ? prod : dev;
+
+// Create Axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Your backend API URL
+  baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
-// Request interceptor to add the auth token to every request
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token');
+// Request interceptor to add auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,18 +28,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // e.g., token expired
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Redirect to login page
-      window.location.href = '/login';
+      // Token expired or unauthorized
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
 );
-
-// --- NEW ADDITION ---
-// Export the base URL so we can use it for constructing image paths
-export const API_BASE_URL = 'http://localhost:5000';
 
 export default api;

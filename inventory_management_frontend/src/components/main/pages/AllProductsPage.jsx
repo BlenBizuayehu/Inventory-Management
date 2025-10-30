@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
 import { FaArrowLeft, FaBoxOpen, FaEdit, FaTrash } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -21,11 +20,11 @@ const ProductsListPage = () => {
         setError("");
         
         // Fetch products
-        const productsRes = await axios.get("http://localhost:5000/api/products");
+        const productsRes = await api.get("/products");
         setProducts(productsRes.data?.data || []);
         
         // Fetch categories
-        const categoriesRes = await axios.get("http://localhost:5000/api/categories");
+        const categoriesRes = await api.get("/categories");
         setCategories(categoriesRes.data?.data || []);
         
       } catch (err) {
