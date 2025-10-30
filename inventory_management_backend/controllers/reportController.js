@@ -1,5 +1,5 @@
 // controllers/reportController.js
-const ReportService = require('../services/reportService');
+const ReportService = require('../Services/reportService');
 const PDFGenerator = require('../services/pdfGenerator');
 const ExcelGenerator = require('../services/excelGenerator');
 const asyncHandler = require('../middleware/async');
