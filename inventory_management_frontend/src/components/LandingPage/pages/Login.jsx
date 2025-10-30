@@ -1,7 +1,5 @@
-// src/components/LandingPage/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../../api"; // path to your api.js
 import "./Login.css";
 
 function Login() {
@@ -24,21 +22,28 @@ function Login() {
     }
 
     setIsLoading(true);
+
     try {
-      // Use your centralized api instance
-      const response = await api.post("/api/users/login", {
-        username,
-        password,
+      const response = await fetch("http://localhost:5000/api/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
       });
 
-      // Save the token to localStorage
-      localStorage.setItem("token", response.data.token);
-      setSuccess("Login Successful");
+      const data = await response.json();
 
-      // Navigate to dashboard
-      navigate("/owner/dashboard/overview");
+      if (response.status === 200) {
+        setSuccess("Login Successful");
+        localStorage.setItem("token", data.token);
+        navigate("/owner/dashboard/overview");
+      } else {
+        setError(data.message || "Login Failed");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Login Failed");
+      console.error("Error during login:", err);
+      setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
