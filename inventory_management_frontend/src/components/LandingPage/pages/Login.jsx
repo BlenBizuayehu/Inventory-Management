@@ -1,81 +1,89 @@
+// src/components/LandingPage/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../config"; // adjust path if needed
+import api from "../../../api"; // path to your api.js
 import "./Login.css";
 
 function Login() {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-    const login = async (e) => {
-        e.preventDefault();
+  const navigate = useNavigate();
 
-        if (!username || !password) {
-            setError("Please enter both username and password.");
-            return;
-        }
+  const login = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/users/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username, password }),
-            });
+    if (!username || !password) {
+      setError("Please enter both username and password.");
+      return;
+    }
 
-            const data = await response.json();
+    setIsLoading(true);
+    try {
+      // Use your centralized api instance
+      const response = await api.post("/api/users/login", {
+        username,
+        password,
+      });
 
-            if (response.status === 200) {
-                setSuccess("Login Successful");
-                localStorage.setItem("token", data.token);
-                setIsLoggedIn(true);
-                navigate("/owner/dashboard/overview");
-            } else {
-                setError(data.message || "Login Failed");
-            }
-        } catch (err) {
-            console.error("Error during login:", err);
-            setError("An error occurred. Please try again.");
-        }
-    };
+      // Save the token to localStorage
+      localStorage.setItem("token", response.data.token);
+      setSuccess("Login Successful");
 
-    return (
-        <div className="login-page">
-            <div className="login-box">
-                <h2>Login</h2>
-                {error && <div className="error-message">{error}</div>}
-                <form onSubmit={login}>
-                    <div className="input-group">
-                        <label htmlFor="username">Username</label>
-                        <input
-                            type="text"
-                            id="username"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder="Enter your username"
-                        />
-                    </div>
-                    <div className="input-group">
-                        <label htmlFor="password">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                        />
-                    </div>
-                    <button type="submit" className="btn-submit">Login</button>
-                    {success && <div className="success-message">{success}</div>}
-                </form>
-            </div>
-        </div>
-    );
+      // Navigate to dashboard
+      navigate("/owner/dashboard/overview");
+    } catch (err) {
+      setError(err.response?.data?.message || "Login Failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-box">
+        <h2>Login</h2>
+
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
+
+        <form onSubmit={login}>
+          <div className="input-group">
+            <label htmlFor="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn-submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 export default Login;
