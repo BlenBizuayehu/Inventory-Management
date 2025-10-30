@@ -1,7 +1,7 @@
 // controllers/reportController.js
 const ReportService = require('../Services/reportService');
-const PDFGenerator = require('../services/pdfGenerator');
-const ExcelGenerator = require('../services/excelGenerator');
+const PDFGenerator = require('../Services/pdfGenerator');
+const ExcelGenerator = require('../Services/excelGenerator');
 const asyncHandler = require('../middleware/async');
 
 // @desc    Generate inventory report
