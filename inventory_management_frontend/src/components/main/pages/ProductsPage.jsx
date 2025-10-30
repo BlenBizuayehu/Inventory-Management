@@ -1,8 +1,7 @@
-import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { FaBoxOpen, FaChevronDown, FaChevronUp, FaEdit, FaListUl, FaPlus, FaTrash } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Add this import
-import api, { API_BASE_URL } from "../../../api";
+import api, { API_BASE_URL } from '../../../api';
 import "./ProductsPage.css";
 
 
@@ -170,7 +169,7 @@ const [submitError, setSubmitError] = useState(null);    // Add this
     if (!formData.newCategory.trim()) return;
 
     try {
-      const res = await axios.post("http://localhost:5000/api/categories", {
+      const res = await api.post("/categories", {
         name: formData.newCategory.trim()
       });
       setCategories((prev) => [...prev, res.data.data]);
@@ -185,12 +184,8 @@ const [submitError, setSubmitError] = useState(null);    // Add this
     if (!window.confirm("Are you sure you want to delete this category?")) return;
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/categories/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      await api.delete(`/categories/${id}`);
+
       setCategories((prev) => prev.filter((c) => c._id !== id));
     } catch (err) {
       alert("Failed to delete category");
@@ -213,11 +208,10 @@ const [submitError, setSubmitError] = useState(null);    // Add this
     if (!categoryEditName.trim()) return alert("Category name cannot be empty");
     try {
       const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/api/categories/${categoryEditId}`,
-        { name: categoryEditName.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/categories/${categoryEditId}`, {
+        name: categoryEditName.trim()
+      });
+
       setCategories((prev) =>
         prev.map((cat) =>
           cat._id === categoryEditId ? { ...cat, name: categoryEditName.trim() } : cat
