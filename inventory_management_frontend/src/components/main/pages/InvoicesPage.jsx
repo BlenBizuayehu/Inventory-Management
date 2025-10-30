@@ -1,7 +1,7 @@
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { FaCalendarAlt, FaEdit, FaFileInvoice, FaSearch, FaSyncAlt, FaTrash } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../../../api';
 
 import './InvoicesPage.css';
 
@@ -18,13 +18,14 @@ const InvoicesPage = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/invoices', {
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
+        const response = await api.get('/invoices', {
+  headers: {
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
+});
+
         setInvoices(response.data.data);
         setLoading(false);
       } catch (error) {
@@ -86,7 +87,7 @@ const InvoicesPage = () => {
   const handleDelete = async (invoiceId) => {
     if (window.confirm("Are you sure you want to delete this invoice?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/invoices/${invoiceId}`);
+        await api.delete(`/invoices/${invoiceId}`);
         setInvoices(prev => prev.filter(inv => inv._id !== invoiceId));
       } catch (error) {
         console.error('Error deleting invoice:', error);
