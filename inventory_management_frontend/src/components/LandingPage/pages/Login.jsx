@@ -1,8 +1,6 @@
-
-
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api"; // ✅ import your axios instance
 import "./Login.css";
 
 function Login() {
@@ -27,26 +25,18 @@ function Login() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
+      // ✅ use the axios instance instead of fetch()
+      const response = await api.post("/users/login", {
+        username,
+        password,
       });
 
-      const data = await response.json();
-
-      if (response.status === 200) {
-        setSuccess("Login Successful");
-        localStorage.setItem("token", data.token);
-        navigate("/owner/dashboard/overview");
-      } else {
-        setError(data.message || "Login Failed");
-      }
+      setSuccess("Login Successful");
+      localStorage.setItem("token", response.data.token);
+      navigate("/owner/dashboard/overview");
     } catch (err) {
       console.error("Error during login:", err);
-      setError("An error occurred. Please try again.");
+      setError(err.response?.data?.message || "Login Failed");
     } finally {
       setIsLoading(false);
     }
@@ -95,4 +85,3 @@ function Login() {
 }
 
 export default Login;
-
