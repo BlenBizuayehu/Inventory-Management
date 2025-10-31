@@ -4,6 +4,8 @@ import axios from "axios";
 // Environment-aware base URL
 const dev = "http://localhost:5000/api";
 const prod = "https://inventory-management-yaij.onrender.com/api";
+console.log("NODE_ENV:", process.env.NODE_ENV);
+
 export const API_BASE_URL = process.env.NODE_ENV === "production" ? prod : dev;
 
 // Create Axios instance
