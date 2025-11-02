@@ -29,14 +29,22 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Token expired or unauthorized
+    const originalRequest = error.config;
+
+    // Only redirect to login if 401 is NOT from the login endpoint
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest.url.includes("/users/login")
+    ) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
+
 
 export default api;
